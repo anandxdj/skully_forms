@@ -1,0 +1,8 @@
+# Wiki Document Version to Git Release Tag Map
+wiki_version_mappings:
+  - version: 1.0.0
+    git_tag: v1.0.0-release
+    released_at: "2026-05-22"
+    commit_sha: "head"
+    scope_affected: [entrypoint, system-architecture, database, api-trpc, turbo-config, workflows, troubleshooting, thoughts]
+    verification_status: verified

@@ -1,0 +1,21 @@
+# RAG Chunking and Tokenization Configuration
+rag_pipeline_parameters:
+  splitter: markdown-header
+  max_chunk_size_tokens: 500
+  overlap_size_tokens: 50
+  split_markers:
+    - "<!-- chunk-end -->"
+  frontmatter_ingestion:
+    extract_metadata: true
+    fields:
+      - title
+      - version
+      - scope
+      - last_updated
+      - owner
+      - tags
+      - chunk_id
+  indexing_strategy:
+    vector_space: cosine-similarity
+    hierarchical_retrieval: true
+    routing_index: docs/llm-wiki/README.md

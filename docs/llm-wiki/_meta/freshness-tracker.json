@@ -1,0 +1,40 @@
+{
+  "last_globally_verified": "2026-05-22T09:13:31Z",
+  "verified_modules": {
+    "entrypoint": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    },
+    "system-architecture": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    },
+    "database": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    },
+    "api-trpc": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    },
+    "turbo-config": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    },
+    "workflows": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    },
+    "troubleshooting": {
+      "verified_at": "2026-05-22T09:13:31Z",
+      "checker": "antigravity",
+      "status": "passed"
+    }
+  }
+}
