@@ -30,6 +30,14 @@ We agreed on the Pages/Views Component Pattern. Instead of putting full page log
 Every component will be kept under 200 lines. Larger components will be recursively factored out into sub-components. This simplifies unit testing, improves readability, and limits token waste during editing iterations.
 <!-- chunk-end -->
 
+### Asset Registry and TypeScript Mappings
+To prevent AI developers from hardcoding raw static image paths (which leads to broken links and visual inconsistencies), we have established a strict static asset integration policy.
+1. **Asset Folder Hierarchy**: All assets are cataloged inside structured directories under `public/assets/` (e.g. `/assets/logos/`, `/assets/illustrations/`).
+2. **Kebab-Case Naming**: Assets use lowercase kebab-case named semantically `[category]-[name]-[variant].[extension]`.
+3. **The TypeScript Map (`lib/assets.ts`)**: We map these assets directly inside a strongly typed TypeScript dictionary constant (`ASSETS`). The AI imports and references this dictionary (e.g. `ASSETS.illustrations.emptyDashboard`), forcing TypeScript autocomplete to govern asset paths.
+4. **Registry Documentation (`asset-registry.md`)**: A static markdown ledger records each asset's location, design tags, and theme compatibility so AI can immediately look up available files.
+<!-- chunk-end -->
+
 ---
 
 ## ⚡ Theming and State Management Systems
