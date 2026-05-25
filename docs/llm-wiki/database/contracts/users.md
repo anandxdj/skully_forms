@@ -28,6 +28,11 @@ The `users` table tracks accounts and OAuth profiles. It is defined in `packages
 - **`email`** (`varchar(255)`): Required, must be unique. Maps to `email` in PostgreSQL.
 - **`emailVerified`** (`boolean`): Default is `false`. Tracks email verification state.
 - **`profileImageUrl`** (`text`): Optional. Stores user profile picture web URL.
+- **`passwordHash`** (`varchar(255)`): Nullable. Hashed password for standard credentials-based login.
+- **`verificationToken`** (`varchar(255)`): Nullable. Hashed token for email verification.
+- **`verificationTokenExpires`** (`timestamp`): Nullable. Expiration time of email verification token.
+- **`resetPasswordToken`** (`varchar(255)`): Nullable. Token for forgotten password reset.
+- **`resetPasswordExpires`** (`timestamp`): Nullable. Expiration time of reset password token.
 - **`createdAt`** (`timestamp`): Default is `now()`. Chronological creation marker.
 - **`updatedAt`** (`timestamp`): Automatically updates to current timestamp on any row update.
 <!-- chunk-end -->

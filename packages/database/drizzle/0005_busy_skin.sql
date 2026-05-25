@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "submissions_form_respondent_unique_idx" ON "submissions" USING btree ("form_id","respondent_id") WHERE respondent_id IS NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "submissions_form_fingerprint_unique_idx" ON "submissions" USING btree ("form_id","device_fingerprint") WHERE device_fingerprint IS NOT NULL;
