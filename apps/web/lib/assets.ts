@@ -14,6 +14,18 @@ export const ASSETS = {
     // Page state illustrations
     emptyDashboard: "/assets/illustrations/illustration-empty-dashboard.svg",
     submissionSuccess: "/assets/illustrations/illustration-submission-success.svg",
+    heroSkeleton: "/assets/illustrations/illustration-hero-skeleton.png",
+    heroSkeletonDark: "/assets/illustrations/illustration-hero-skeleton-dark.png",
+    developerSkeletonLight: "/assets/illustrations/illustration-developer-skeleton-light.png",
+    developerSkeletonDark: "/assets/illustrations/illustration-developer-skeleton-dark.png",
+    gamerSkeletonLight: "/assets/illustrations/illustration-gamer-skeleton-light.png",
+    gamerSkeletonDark: "/assets/illustrations/illustration-gamer-skeleton-dark.png",
+    skaterSkeletonLight: "/assets/illustrations/illustration-skater-skeleton-light.png",
+    skaterSkeletonDark: "/assets/illustrations/illustration-skater-skeleton-dark.png",
+    successSkeletonLight: "/assets/illustrations/illustration-success-skeleton-light.png",
+    successSkeletonDark: "/assets/illustrations/illustration-success-skeleton-dark.png",
+    emptyBoxSkeletonLight: "/assets/illustrations/illustration-box-skeleton-light.png",
+    emptyBoxSkeletonDark: "/assets/illustrations/illustration-box-skeleton-dark.png",
   },
   textures: {
     // Backdrop background grids and meshes

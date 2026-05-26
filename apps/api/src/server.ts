@@ -24,13 +24,26 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
 });
 
 // Configure CORS
-if (env.NODE_ENV !== "prod") {
-  app.use(
-    cors({
-      origin: "*",
-    }),
-  );
-}
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or postman)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+      ];
+      
+      if (allowedOrigins.includes(origin) || origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  }),
+);
 
 // ─── Middleware Enhancements ───────────────────────────────────────────────
 

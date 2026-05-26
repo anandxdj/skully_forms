@@ -17,6 +17,13 @@ export const createTRPCHttpBatchClientClient = (opts?: CreateTRPCHttpBatchClient
       return fetch(url, {
         ...options,
         credentials: "include",
+        headers: {
+          ...options?.headers,
+          "x-user-id":
+            typeof window !== "undefined"
+              ? localStorage.getItem("x-user-id") || "00000000-0000-0000-0000-000000000000"
+              : "00000000-0000-0000-0000-000000000000",
+        },
       });
     },
   });

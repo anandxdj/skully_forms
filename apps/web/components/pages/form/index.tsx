@@ -1,27 +1,197 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { trpc } from "~/trpc/client";
+import { toast } from "sonner";
+import { Loader2, AlertCircle, Skull, RotateCcw } from "lucide-react";
+import { FormField } from "@repo/trpc/server/schemas/form-field-schemas";
+import { LayoutMode } from "@repo/trpc/server/schemas/form-schemas";
+
+import ThemeWrapper from "./theme-wrapper";
+import LayoutScroll from "./layout-scroll";
+import LayoutSlide from "./layout-slide";
 
 interface PublicFormPageViewProps {
   slug: string;
 }
 
 export default function PublicFormPageView({ slug }: PublicFormPageViewProps) {
-  return (
-    <div className="flex items-center justify-center min-h-screen px-4 bg-background text-foreground">
-      <div className="w-full max-w-xl p-8 space-y-6 rounded-2xl border border-border bg-card shadow-2xl backdrop-blur-md">
-        <div className="space-y-2 border-b border-border pb-4">
-          <h1 className="text-3xl font-bold tracking-tight text-primary">Public Submission Form</h1>
-          <p className="text-sm text-muted-foreground">
-            Form slug parameter: <span className="font-mono bg-muted px-2 py-0.5 rounded text-xs">{slug}</span>
+  // 1. Fetch published form layout
+  const { data: form, isLoading, error } = trpc.forms.getPublicForm.useQuery(
+    { slug },
+    { refetchOnWindowFocus: false, retry: 1 }
+  );
+
+  // 2. Submit response mutation
+  const submitFormMutation = trpc.submissions.submitForm.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      toast.success("Responses sealed successfully.");
+    },
+    onError: (err) => {
+      toast.error(`Submission failed: ${err.message}`);
+    },
+  });
+
+  // 3. Page operational states
+  const [values, setValues] = useState<Record<string, any>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const startedAt = useRef<Date | null>(null);
+
+  // Set started timestamp on mount
+  useEffect(() => {
+    startedAt.current = new Date();
+  }, []);
+
+  const handleChangeValue = (fieldId: string, val: any) => {
+    setValues((prev) => ({ ...prev, [fieldId]: val }));
+    // Clear errors when user types or selects
+    if (errors[fieldId]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldId];
+        return next;
+      });
+    }
+  };
+
+  // 4. Form Submit handler
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form) return;
+
+    // Validate fields locally first
+    const fields = form.fields as FormField[];
+    const nextErrors: Record<string, string> = {};
+
+    fields.forEach((field) => {
+      const val = values[field.id];
+      if (field.required) {
+        if (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0)) {
+          nextErrors[field.id] = `${field.label} is required.`;
+        }
+      }
+
+      // Type-specific basic validation edge cases
+      if (field.type === "EMAIL" && val) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(val)) {
+          nextErrors[field.id] = "Please provide a valid email address.";
+        }
+      }
+    });
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      toast.error("Please fill in all mandatory questions correctly.");
+      return;
+    }
+
+    // Retrieve or generate respondent UUID
+    let respondentId = localStorage.getItem("x-respondent-id");
+    if (!respondentId) {
+      respondentId = "00000000-0000-0000-0000-0000" + Math.random().toString(36).substring(2, 10).padStart(12, "0");
+      localStorage.setItem("x-respondent-id", respondentId);
+    }
+
+    const deviceFingerprint = navigator.userAgent.slice(0, 60);
+    const durationMs = startedAt.current
+      ? Date.now() - startedAt.current.getTime()
+      : undefined;
+
+    submitFormMutation.mutate({
+      slug,
+      data: values,
+      respondentId,
+      deviceFingerprint,
+      startedAt: startedAt.current || undefined,
+      durationMs,
+    });
+  };
+
+  const handleResetForm = () => {
+    setValues({});
+    setErrors({});
+    setSubmitted(false);
+    startedAt.current = new Date();
+  };
+
+  // Loader
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-foreground">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-xs font-mono font-bold mt-4 animate-pulse">Resolving dynamic form schema...</p>
+      </div>
+    );
+  }
+
+  // Error Page (draft form or wrong slug)
+  if (error || !form) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-foreground px-4 text-center space-y-5">
+        <div className="w-14 h-14 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center">
+          <AlertCircle className="w-7 h-7" />
+        </div>
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-bold text-foreground">Form is not available</h2>
+          <p className="text-xs text-muted-foreground max-w-sm">
+            {error?.message || "Form might be in draft mode. Creators must toggle 'Publish Live' in builder to enable public access."}
           </p>
         </div>
-        <div className="space-y-4">
-          <div className="p-4 border border-border rounded-lg bg-background text-center">
-            <p className="text-sm text-muted-foreground">
-              Form schema loading... (Setup in Progress)
+      </div>
+    );
+  }
+
+  return (
+    <ThemeWrapper theme={form.theme as any}>
+      {submitted ? (
+        /* 5.1 SUCCESS SCREEN */
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
+          <div className="w-18 h-18 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-lg animate-bounce">
+            <Skull className="w-9 h-9 fill-current animate-pulse" />
+          </div>
+          <div className="space-y-2.5">
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Form Submitted Successfully!</h2>
+            <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              Thank you for completing our questionnaire. Your response has been securely logged.
             </p>
           </div>
+          <button
+            onClick={handleResetForm}
+            className="inline-flex items-center gap-1.5 text-2xs font-black text-primary bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/20 transition-all active:scale-95 cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            Submit Another Response
+          </button>
         </div>
-      </div>
-    </div>
+      ) : (
+        /* 5.2 ACTIVE QUESTIONNAIRE LAYOUT */
+        form.layoutMode === "SLIDE" ? (
+          <LayoutSlide
+            fields={form.fields as FormField[]}
+            values={values}
+            errors={errors}
+            onChangeValue={handleChangeValue}
+            onSubmit={handleSubmit}
+            submitting={submitFormMutation.isPending}
+            title={form.title}
+            description={form.description}
+          />
+        ) : (
+          <LayoutScroll
+            fields={form.fields as FormField[]}
+            values={values}
+            errors={errors}
+            onChangeValue={handleChangeValue}
+            onSubmit={handleSubmit}
+            submitting={submitFormMutation.isPending}
+            title={form.title}
+            description={form.description}
+          />
+        )
+      )}
+    </ThemeWrapper>
   );
 }

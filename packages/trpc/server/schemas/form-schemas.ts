@@ -4,7 +4,7 @@ import { formFieldsArraySchema } from "./form-field-schemas";
 // ─── Layout, Theme & Auth enums ────────────────────────────────────────────────
 
 export const layoutModeSchema = z.enum(["SCROLL", "SLIDE"]);
-export const themeSchema = z.enum(["slate", "cyberpunk", "sunset", "forest"]);
+export const themeSchema = z.enum(["slate", "cyberpunk", "sunset", "forest", "skullyLight", "skullyDark"]);
 export const submissionModeSchema = z.enum(["ANONYMOUS", "AUTHENTICATED", "BOTH"]);
 
 export type LayoutMode = z.infer<typeof layoutModeSchema>;

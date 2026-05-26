@@ -13,8 +13,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Streamyst",
-  description: "Media Forwarding",
+  title: "Skully Forms — Forms that don't feel like forms.",
+  description: "Premium, whimsical, and highly interactive form-building experience with dynamic OKLCH theming and AI-assisted generation.",
 };
 
 export default function RootLayout({

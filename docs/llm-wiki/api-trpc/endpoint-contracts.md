@@ -46,6 +46,29 @@ Defined in `packages/trpc/server/routes/auth/route.ts`.
 - **Output**: Array of `{ provider, displayName, displayText, authUrl }`
 <!-- chunk-end -->
 
+### `auth.signUp`
+- **Type**: Mutation (public)
+- **OpenAPI**: `POST /authentication/signup`
+- **Input**: `{ email: string, password: string (min 6), fullName: string (min 2) }`
+- **Output**: `{ id: uuid, email: string, fullName: string }`
+- **Side effects**: Creates new user with hashed PBKDF2 credentials password
+<!-- chunk-end -->
+
+### `auth.signIn`
+- **Type**: Mutation (public)
+- **OpenAPI**: `POST /authentication/signin`
+- **Input**: `{ email: string, password: string }`
+- **Output**: `{ id: uuid, email: string, fullName: string }`
+<!-- chunk-end -->
+
+### `auth.me`
+- **Type**: Query (protected)
+- **OpenAPI**: `GET /authentication/me`
+- **Input**: none
+- **Output**: `{ id: uuid, email: string, fullName: string }`
+- **Guards**: Resolves currently authenticated user based on active context
+<!-- chunk-end -->
+
 ## 📄 Forms Router Contracts
 Defined in `packages/trpc/server/routes/forms/route.ts`. All procedures use Zod schemas from `packages/trpc/server/schemas/form-schemas.ts` and `form-field-schemas.ts`.
 
