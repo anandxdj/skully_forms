@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { trpc } from "~/trpc/client";
 import {
   BarChart,
@@ -12,6 +13,7 @@ import {
   Cell,
 } from "recharts";
 import { Loader2, AlertCircle, BarChart3, TrendingUp } from "lucide-react";
+import { ASSETS } from "~/lib/assets";
 
 interface TabAnalyticsProps {
   formId: string;
@@ -64,7 +66,7 @@ export default function TabAnalytics({ formId }: TabAnalyticsProps) {
             <p className="text-4xs font-black uppercase text-muted-foreground tracking-widest">
               Total Responses
             </p>
-            <p className="text-3xl font-black text-foreground mt-2 leading-none">
+            <p className="font-heading text-3xl font-extrabold text-foreground mt-2 leading-none">
               {analytics.totalSubmissions}
             </p>
           </div>
@@ -78,11 +80,11 @@ export default function TabAnalytics({ formId }: TabAnalyticsProps) {
             <p className="text-4xs font-black uppercase text-muted-foreground tracking-widest">
               Completion Rate
             </p>
-            <p className="text-3xl font-black text-foreground mt-2 leading-none">
+            <p className="font-heading text-3xl font-extrabold text-success mt-2 leading-none">
               {analytics.totalSubmissions > 0 ? "100%" : "0%"}
             </p>
           </div>
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+          <div className="p-3 rounded-xl bg-success-bg border border-success/20 text-success">
             <TrendingUp className="w-5 h-5" />
           </div>
         </div>
@@ -95,8 +97,13 @@ export default function TabAnalytics({ formId }: TabAnalyticsProps) {
         </h3>
 
         {analytics.distributions.length === 0 ? (
-          <div className="p-12 border border-dashed border-border rounded-xl text-center text-xs text-muted-foreground select-none">
-            No option-based (Select/Radio/Checkbox) questions found in this form layout.
+          <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl select-none space-y-3">
+            <div className="relative w-24 h-24">
+              <Image src={ASSETS.skeletons.inBox} alt="No chart data" fill className="object-contain drop-shadow" />
+            </div>
+            <p className="text-xs text-muted-foreground text-center max-w-[240px]">
+              No option-based questions found. Add Select, Radio, or Checkbox fields to see distributions.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -106,7 +113,7 @@ export default function TabAnalytics({ formId }: TabAnalyticsProps) {
               return (
                 <div
                   key={dist.fieldId}
-                  className="p-5.5 rounded-2xl border border-border bg-card shadow-sm flex flex-col justify-between"
+                  className="p-5 rounded-2xl border border-border bg-card shadow-sm flex flex-col justify-between"
                 >
                   <div className="space-y-1.5 mb-4">
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-5xs font-black uppercase tracking-wider">

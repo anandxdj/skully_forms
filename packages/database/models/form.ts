@@ -54,7 +54,7 @@ export const formsTable = pgTable(
     published: boolean("published").default(false),
 
     layoutMode: varchar("layout_mode", { length: 50 }).$type<"SCROLL" | "SLIDE">().notNull().default("SCROLL"),
-    theme: varchar("theme", { length: 50 }).notNull().default("slate"),
+    theme: varchar("theme", { length: 50 }).notNull().default("skullyLight"),
 
     fields: jsonb("fields").$type<DbFormField[]>().notNull().default([]),
 

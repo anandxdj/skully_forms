@@ -120,7 +120,7 @@ export default function ResponsesPageView({ formId }: ResponsesPageViewProps) {
           <button
             onClick={handleRebuildCache}
             disabled={rebuildCacheMutation.isPending}
-            className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 text-xs font-bold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold text-foreground border border-border bg-card hover:bg-muted rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             {rebuildCacheMutation.isPending ? (
               <>
@@ -149,7 +149,7 @@ export default function ResponsesPageView({ formId }: ResponsesPageViewProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4.5 py-3.5 border-b-2 text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
+                className={`px-5 py-3.5 border-b-2 text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
                   isSelected
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border/60"

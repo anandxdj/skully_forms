@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../../trpc";
 import { formService } from "../../services";
@@ -13,14 +14,25 @@ import {
 const TAGS = ["Submissions"];
 const getPath = generatePath("/submissions");
 
+function getClientIp(req: { headers: Record<string, unknown>; socket: { remoteAddress?: string } }): string {
+  const fwd = req.headers["x-forwarded-for"];
+  if (typeof fwd === "string") {
+    const first = fwd.split(",")[0];
+    if (first) return first.trim();
+  }
+  return req.socket.remoteAddress ?? "";
+}
+
+function deriveFingerprint(ip: string, userAgent: string, slug: string): string {
+  // Slug acts as a per-form salt so the same device on different forms produces
+  // different fingerprints — keeps anonymous-dedup scoped to a single form.
+  return crypto
+    .createHash("sha256")
+    .update(`${ip}\n${userAgent}\n${slug}`)
+    .digest("hex");
+}
+
 export const submissionsRouter = router({
-  // ── POST /public/forms/:slug/submit ─────────────────────────────────────────
-  
-  /**
-   * Public procedure to submit answers to a published form.
-   * Resolves form ID via slug, validates input answers schema, and records tracking metrics
-   * (respondent ID, device fingerprint, started timestamps, and completion speed).
-   */
   submitForm: publicProcedure
     .meta({
       openapi: {
@@ -28,17 +40,28 @@ export const submissionsRouter = router({
         path: "/public/forms/{slug}/submit",
         tags: ["Public"],
         summary: "Submit responses to a published form",
-        description: "Accepts, validates, and stores a respondent's form submission. Enforces constraints based on the form's publishing and authentication states."
+        description:
+          "Accepts, validates, and stores a respondent's form submission. Enforces constraints based on the form's publishing and authentication states.",
       },
     })
     .input(submitFormInputSchema)
     .output(submissionOutputSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const req = ctx.req as never as {
+        headers: Record<string, unknown>;
+        socket: { remoteAddress?: string };
+      };
+      const userAgent = String(req.headers["user-agent"] ?? "");
+      const ip = getClientIp(req);
+      const fingerprint = deriveFingerprint(ip, userAgent, input.slug);
+      // Pull respondentId from the authenticated session, NEVER the input body.
+      const respondentId = ctx.user?.id;
+
       const submission = await formService.submitResponse({
         slug: input.slug,
         data: input.data,
-        respondentId: input.respondentId,
-        deviceFingerprint: input.deviceFingerprint,
+        respondentId,
+        deviceFingerprint: fingerprint,
         startedAt: input.startedAt,
         durationMs: input.durationMs,
       });
@@ -55,12 +78,6 @@ export const submissionsRouter = router({
       };
     }),
 
-  // ── GET /forms/:formId/submissions ──────────────────────────────────────────
-  
-  /**
-   * Protected procedure to fetch chronological list of all submissions.
-   * Enforces creator ownership checks.
-   */
   getSubmissions: protectedProcedure
     .meta({
       openapi: {
@@ -68,15 +85,20 @@ export const submissionsRouter = router({
         path: getPath("/{formId}"),
         tags: TAGS,
         summary: "Get all submissions for a specific form (owner only)",
-        description: "Retrieves a comprehensive array of all submitted questionnaire responses for a given form ID. Checks for creator ownership."
       },
     })
     .input(getSubmissionsInputSchema)
     .output(z.array(submissionOutputSchema))
     .query(async ({ ctx, input }) => {
-      const submissions = await formService.getSubmissions(input.formId, ctx.user.id);
+      // Server-side hard cap (100). Cursor is honored when provided; absent
+      // cursor returns the most-recent page so existing callers keep working.
+      const { items } = await formService.getSubmissions(
+        input.formId,
+        ctx.user.id,
+        { limit: input.limit, cursor: input.cursor },
+      );
 
-      return submissions.map((sub) => ({
+      return items.map((sub) => ({
         id: sub.id,
         formId: sub.formId,
         data: sub.data as Record<string, any>,
@@ -88,12 +110,6 @@ export const submissionsRouter = router({
       }));
     }),
 
-  // ── GET /forms/:formId/analytics ─────────────────────────────────────────────
-  
-  /**
-   * Protected procedure to aggregate dynamic in-memory counts.
-   * Enforces creator ownership checks and counts distributions for option-based field types.
-   */
   getFormAnalytics: protectedProcedure
     .meta({
       openapi: {
@@ -101,27 +117,15 @@ export const submissionsRouter = router({
         path: getPath("/{formId}/analytics"),
         tags: TAGS,
         summary: "Get response distribution analytics for option-based fields (owner only)",
-        description: "Aggregates form response data dynamically to return total submission volume and chosen choice ratios for select, radio, and checkbox questions."
       },
     })
     .input(getAnalyticsInputSchema)
     .output(analyticsOutputSchema)
     .query(async ({ ctx, input }) => {
       const analytics = await formService.getAnalytics(input.formId, ctx.user.id);
-
-      return {
-        formId: analytics.formId,
-        totalSubmissions: analytics.totalSubmissions,
-        distributions: analytics.distributions,
-      };
+      return analytics;
     }),
 
-  // ── POST /forms/:formId/analytics/rebuild ────────────────────────────────────
-  
-  /**
-   * Protected procedure to force recount and rebuild form analytics caches.
-   * Runs a complete SQL-native recalculation. Enforces owner verification.
-   */
   rebuildFormAnalytics: protectedProcedure
     .meta({
       openapi: {
@@ -129,7 +133,6 @@ export const submissionsRouter = router({
         path: getPath("/{formId}/analytics/rebuild"),
         tags: TAGS,
         summary: "Force recount and rebuild form analytics caches (owner only)",
-        description: "Runs a complete, atomic transaction in PostgreSQL to recount all raw submissions, reset cached counters, and rebuild the analytics cache from scratch."
       },
     })
     .input(getAnalyticsInputSchema)

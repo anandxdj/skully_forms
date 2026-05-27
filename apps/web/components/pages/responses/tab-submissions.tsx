@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { trpc } from "~/trpc/client";
 import { FormField } from "@repo/trpc/server/schemas/form-field-schemas";
 import { Loader2, AlertCircle, Calendar, Clock, User, ArrowRight, X, FileText } from "lucide-react";
 import { format } from "date-fns";
+import { ASSETS } from "~/lib/assets";
 
 interface TabSubmissionsProps {
   formId: string;
@@ -68,8 +70,14 @@ export default function TabSubmissions({ formId, fields }: TabSubmissionsProps) 
       </div>
 
       {submissions.length === 0 ? (
-        <div className="p-12 border border-dashed border-border rounded-xl text-center text-xs text-muted-foreground select-none">
-          No submissions logged inside database yet. Share form public URLs to collect answers!
+        <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl select-none space-y-3">
+          <div className="relative w-24 h-24">
+            <Image src={ASSETS.skeletons.inBox} alt="No submissions yet" fill className="object-contain drop-shadow" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-xs font-bold text-foreground">The crypt is empty</p>
+            <p className="text-4xs text-muted-foreground max-w-[220px]">No submissions logged yet. Share your form link to start collecting responses!</p>
+          </div>
         </div>
       ) : (
         /* Responsive Datatable Container */
@@ -92,19 +100,19 @@ export default function TabSubmissions({ formId, fields }: TabSubmissionsProps) 
 
                 return (
                   <tr key={sub.id} className="hover:bg-muted/10 transition-colors">
-                    <td className="px-5 py-4.5 font-mono text-3xs font-bold text-foreground">
+                    <td className="px-5 py-4 font-mono text-3xs font-bold text-foreground">
                       {sub.id.slice(0, 8)}...
                     </td>
-                    <td className="px-5 py-4.5 text-muted-foreground">
+                    <td className="px-5 py-4 text-muted-foreground">
                       {sub.createdAt ? format(new Date(sub.createdAt), "MMM dd, yyyy h:mm a") : "-"}
                     </td>
-                    <td className="px-5 py-4.5 text-muted-foreground font-mono">
+                    <td className="px-5 py-4 text-muted-foreground font-mono">
                       {sub.durationMs ? `${(sub.durationMs / 1000).toFixed(1)}s` : "-"}
                     </td>
-                    <td className="px-5 py-4.5 text-foreground font-semibold max-w-[200px] truncate">
+                    <td className="px-5 py-4 text-foreground font-semibold max-w-[200px] truncate">
                       {renderValuePreview(previewAnswer)}
                     </td>
-                    <td className="px-5 py-4.5 text-right select-none">
+                    <td className="px-5 py-4 text-right select-none">
                       <button
                         onClick={() => setSelectedSubId(sub.id)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-primary/15 hover:border-primary/20 hover:text-primary transition-all text-3xs font-extrabold cursor-pointer active:scale-95"
@@ -181,7 +189,7 @@ export default function TabSubmissions({ formId, fields }: TabSubmissionsProps) 
                     <p className="text-5xs font-black uppercase text-muted-foreground tracking-widest">
                       {field.label}
                     </p>
-                    <div className="p-3 bg-[#08080a]/35 border border-border/80 rounded-xl text-xs font-semibold text-foreground">
+                    <div className="p-3 bg-muted/30 border border-border/60 rounded-xl text-xs font-semibold text-foreground">
                       {typeof answer === "object" && answer && !Array.isArray(answer) && "url" in answer ? (
                         /* Handle uploaded file layout detail */
                         <a
@@ -209,7 +217,7 @@ export default function TabSubmissions({ formId, fields }: TabSubmissionsProps) 
             <div className="border-t border-border/50 pt-4 mt-6 flex justify-end shrink-0 select-none">
               <button
                 onClick={() => setSelectedSubId(null)}
-                className="px-4.5 py-2 rounded-xl border border-border hover:bg-muted text-xs font-bold text-foreground transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-border hover:bg-muted text-xs font-bold text-foreground transition-all cursor-pointer"
               >
                 Close Inspector
               </button>

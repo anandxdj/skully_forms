@@ -37,19 +37,26 @@ const dateFieldSchema = baseFieldSchema.extend({
 
 // ─── Options-based fields ─────────────────────────────────────────────────────
 
+const optionFieldExtras = {
+  options: z.array(z.string().min(1)).min(1).max(100),
+  randomize: z.boolean().optional(),
+  allowOther: z.boolean().optional(),
+  verticalAlign: z.boolean().optional(),
+} as const;
+
 const selectFieldSchema = baseFieldSchema.extend({
   type: z.literal("SELECT"),
-  options: z.array(z.string().min(1)).min(1).max(100),
+  ...optionFieldExtras,
 });
 
 const radioFieldSchema = baseFieldSchema.extend({
   type: z.literal("RADIO"),
-  options: z.array(z.string().min(1)).min(1).max(100),
+  ...optionFieldExtras,
 });
 
 const checkboxFieldSchema = baseFieldSchema.extend({
   type: z.literal("CHECKBOX"),
-  options: z.array(z.string().min(1)).min(1).max(100),
+  ...optionFieldExtras,
 });
 
 // ─── File field ───────────────────────────────────────────────────────────────

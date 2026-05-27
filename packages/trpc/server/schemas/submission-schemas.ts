@@ -21,10 +21,15 @@ export const fieldAnswerSchema = z.union([
 export const submitFormInputSchema = z.object({
   slug: z.string().min(1).max(12),
   data: z.record(z.string(), fieldAnswerSchema),
+  // `respondentId` and `deviceFingerprint` are accepted in the input schema
+  // for client-side type compatibility but the server IGNORES both fields —
+  // respondentId is taken from the session and deviceFingerprint is derived
+  // from sha256(IP + UA + slug). Trusting client input here was a spoofing
+  // vector for impersonation and dedup-bypass.
   respondentId: z.string().uuid().optional(),
   deviceFingerprint: z.string().max(64).optional(),
   startedAt: z.date().optional(),
-  durationMs: z.number().int().nonnegative().optional(),
+  durationMs: z.number().int().nonnegative().max(60 * 60 * 1000 * 6).optional(),
 });
 
 export type SubmitFormInput = z.infer<typeof submitFormInputSchema>;
@@ -35,6 +40,9 @@ export type FileAnswer = z.infer<typeof fileAnswerSchema>;
 
 export const getSubmissionsInputSchema = z.object({
   formId: z.string().uuid(),
+  limit: z.number().int().min(1).max(100).optional(),
+  // Cursor is the `createdAt` ISO timestamp of the last row from the previous page.
+  cursor: z.string().datetime().optional(),
 });
 
 export type GetSubmissionsInput = z.infer<typeof getSubmissionsInputSchema>;

@@ -32,7 +32,7 @@ export default function LayoutScroll({
       className="w-full max-w-xl mx-auto px-4 py-16 space-y-8 select-none"
     >
       {/* Form Header Welcome Panel */}
-      <div className="p-6.5 rounded-2xl border border-border/80 bg-card/65 backdrop-blur-md text-left shadow-lg">
+      <div className="p-7 rounded-2xl border border-border/80 bg-card/65 backdrop-blur-md text-left shadow-lg">
         <div className="flex items-center gap-1.5 text-primary mb-1">
           <Skull className="w-5 h-5 fill-current" />
           <span className="text-3xs font-black tracking-widest uppercase">Seal of responses</span>
@@ -72,7 +72,7 @@ export default function LayoutScroll({
       >
         {submitting ? (
           <>
-            <Loader2 className="w-4.5 h-4.5 animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
             Submitting responses...
           </>
         ) : (

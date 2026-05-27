@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Plus_Jakarta_Sans, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { GlobalProviders } from "~/providers/global";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-heading",
+  display: "swap",
 });
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-body",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -23,8 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html
+      lang="en"
+      className={`${plusJakartaSans.variable} ${dmSans.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="font-sans antialiased">
         <GlobalProviders>{children}</GlobalProviders>
       </body>
     </html>

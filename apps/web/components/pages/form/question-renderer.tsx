@@ -217,7 +217,7 @@ export default function QuestionRenderer({
                 >
                   <span>{opt}</span>
                   <div
-                    className={`w-4.5 h-4.5 rounded border flex items-center justify-center transition-all ${
+                    className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
                       isChecked ? "bg-primary border-primary text-white" : "border-border"
                     }`}
                   >

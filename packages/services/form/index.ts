@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
-import { eq, desc, count, and, sql } from "drizzle-orm";
+import { eq, desc, count, and, sql, lt } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import { db } from "@repo/database";
+import { assertSafeUrl } from "../security/url-guard";
 import {
   formsTable,
   submissionsTable,
@@ -112,7 +113,21 @@ class FormService {
     if (input.theme !== undefined) updatePayload.theme = input.theme;
     if (input.fields !== undefined) updatePayload.fields = input.fields;
     if (input.submissionMode !== undefined) updatePayload.submissionMode = input.submissionMode;
-    if (input.webhookUrl !== undefined) updatePayload.webhookUrl = input.webhookUrl;
+    if (input.webhookUrl !== undefined) {
+      // Empty string explicitly clears the webhook.
+      if (input.webhookUrl === "" || input.webhookUrl === null) {
+        updatePayload.webhookUrl = null;
+      } else {
+        const verdict = await assertSafeUrl(input.webhookUrl);
+        if (!verdict.ok) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Webhook URL rejected: ${verdict.reason ?? "not allowed"}`,
+          });
+        }
+        updatePayload.webhookUrl = input.webhookUrl;
+      }
+    }
 
     const [updated] = await db
       .update(formsTable)
@@ -188,11 +203,13 @@ class FormService {
    * @returns An array of forms with their respective submission counts.
    */
   async getUserForms(userId: string): Promise<Array<SelectForm & { submissionCount: number }>> {
+    const MAX_FORMS_PER_REQUEST = 200;
     const rows = await db
       .select()
       .from(formsTable)
       .where(eq(formsTable.userId, userId))
-      .orderBy(desc(formsTable.createdAt));
+      .orderBy(desc(formsTable.createdAt))
+      .limit(MAX_FORMS_PER_REQUEST);
 
     return rows.map((row) => ({
       ...row,
@@ -289,13 +306,26 @@ class FormService {
         }
       }
 
-      // 6. Schema & Option Validation (Layers 6, 7, 8, 9)
+      // 6. Schema & Option Validation
       const fields = (form.fields as DbFormField[]) ?? [];
+      const knownFieldIds = new Set(fields.map((f) => f.id));
+      const MAX_TEXT_LENGTH = 50_000;
+      const MAX_TEXTAREA_LENGTH = 100_000;
+      const MAX_CHECKBOX_SELECTIONS = 200;
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      // Drop any keys that aren't declared on the form. This stops clients from
+      // stuffing the JSONB column with arbitrary attacker-controlled data.
+      const sanitizedData: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(input.data)) {
+        if (knownFieldIds.has(k)) sanitizedData[k] = v;
+      }
+
       const missingRequiredFields: string[] = [];
       const invalidChoiceInjections: string[] = [];
 
       for (const field of fields) {
-        const answer = input.data[field.id];
+        const answer = sanitizedData[field.id];
 
         // Required check
         const isMissing =
@@ -312,6 +342,40 @@ class FormService {
 
         if (isMissing) continue;
 
+        if (field.type === "TEXT") {
+          if (typeof answer !== "string" || answer.length > MAX_TEXT_LENGTH) {
+            invalidChoiceInjections.push(`Field '${field.label}' exceeds maximum length.`);
+          }
+        }
+        if (field.type === "TEXTAREA") {
+          if (typeof answer !== "string" || answer.length > MAX_TEXTAREA_LENGTH) {
+            invalidChoiceInjections.push(`Field '${field.label}' exceeds maximum length.`);
+          }
+        }
+        if (field.type === "EMAIL") {
+          if (typeof answer !== "string" || !EMAIL_RE.test(answer) || answer.length > 320) {
+            invalidChoiceInjections.push(`Field '${field.label}' must be a valid email.`);
+          }
+        }
+        if (field.type === "NUMBER") {
+          const n = typeof answer === "number" ? answer : Number(answer);
+          if (!Number.isFinite(n)) {
+            invalidChoiceInjections.push(`Field '${field.label}' must be a number.`);
+          } else {
+            if (field.min !== undefined && n < field.min) {
+              invalidChoiceInjections.push(`Field '${field.label}' is below the minimum value.`);
+            }
+            if (field.max !== undefined && n > field.max) {
+              invalidChoiceInjections.push(`Field '${field.label}' is above the maximum value.`);
+            }
+          }
+        }
+        if (field.type === "DATE") {
+          if (typeof answer !== "string" || Number.isNaN(new Date(answer).getTime())) {
+            invalidChoiceInjections.push(`Field '${field.label}' must be a valid date.`);
+          }
+        }
+
         // Select & Radio Option validation
         if (field.type === "RADIO" || field.type === "SELECT") {
           const allowedOptions = field.options ?? [];
@@ -324,9 +388,13 @@ class FormService {
         if (field.type === "CHECKBOX") {
           if (!Array.isArray(answer)) {
             invalidChoiceInjections.push(`Field '${field.label}' must be an array of selections.`);
+          } else if (answer.length > MAX_CHECKBOX_SELECTIONS) {
+            invalidChoiceInjections.push(`Field '${field.label}' has too many selections.`);
           } else {
             const allowedOptions = field.options ?? [];
-            const matches = (answer as any[]).every((ans) => typeof ans === "string" && allowedOptions.includes(ans));
+            const matches = (answer as any[]).every(
+              (ans) => typeof ans === "string" && allowedOptions.includes(ans),
+            );
             if (!matches) {
               invalidChoiceInjections.push(`Field '${field.label}' contains invalid option selections.`);
             }
@@ -338,20 +406,27 @@ class FormService {
           const ratingVal = Number(answer);
           const maxStars = field.maxStars ?? 5;
           if (!Number.isInteger(ratingVal) || ratingVal < 1 || ratingVal > maxStars) {
-            invalidChoiceInjections.push(`Field '${field.label}' must be an integer between 1 and ${maxStars}.`);
+            invalidChoiceInjections.push(
+              `Field '${field.label}' must be an integer between 1 and ${maxStars}.`,
+            );
           }
         }
 
         // File validation check
         if (field.type === "FILE") {
-          if (typeof answer !== "object" || !("url" in answer)) {
+          if (typeof answer !== "object" || !("url" in (answer as object))) {
             invalidChoiceInjections.push(`Field '${field.label}' must be a valid file upload reference.`);
           } else {
-            const file = answer as any;
-            if (field.maxSizeMB) {
+            const file = answer as { url?: unknown; type?: unknown; size?: unknown };
+            if (typeof file.url !== "string" || !/^https?:\/\//.test(file.url)) {
+              invalidChoiceInjections.push(`Field '${field.label}' has an invalid upload URL.`);
+            }
+            if (field.maxSizeMB && typeof file.size === "number") {
               const maxBytes = field.maxSizeMB * 1024 * 1024;
               if (file.size > maxBytes) {
-                invalidChoiceInjections.push(`Uploaded file in field '${field.label}' exceeds the limit of ${field.maxSizeMB}MB.`);
+                invalidChoiceInjections.push(
+                  `Uploaded file in field '${field.label}' exceeds the limit of ${field.maxSizeMB}MB.`,
+                );
               }
             }
             if (field.accept) {
@@ -376,9 +451,12 @@ class FormService {
       if (invalidChoiceInjections.length > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Validation failed. Invalid choices: ${invalidChoiceInjections.join(" | ")}`,
+          message: `Validation failed: ${invalidChoiceInjections.join(" | ")}`,
         });
       }
+
+      // Use the sanitized payload from here on so unknown keys never reach the DB.
+      input = { ...input, data: sanitizedData as typeof input.data };
 
       // 7. Insert the submission response (Layer 10: DB Unique Conflict Catch)
       let submission: SelectSubmission;
@@ -483,22 +561,42 @@ class FormService {
   }
 
   /**
-   * Retrieves all submission response records for a specific form. First verifies owner access rights.
-   * Submissions are ordered latest first.
-   * 
-   * @param formId - The unique UUID of the form to retrieve submissions for.
-   * @param userId - The unique UUID of the requesting owner.
-   * @returns An array of SelectSubmission response records.
-   * @throws {TRPCError} If ownership check fails.
+   * Retrieves a page of submission response records for a specific form, latest first.
+   * Server enforces `limit <= MAX_PAGE_SIZE` regardless of what the client asks for so
+   * a single caller cannot OOM the API.
    */
-  async getSubmissions(formId: string, userId: string): Promise<SelectSubmission[]> {
+  async getSubmissions(
+    formId: string,
+    userId: string,
+    opts: { limit?: number; cursor?: string } = {},
+  ): Promise<{ items: SelectSubmission[]; nextCursor: string | null }> {
     await assertOwnership(formId, userId);
 
-    return db
+    const MAX_PAGE_SIZE = 100;
+    const DEFAULT_PAGE_SIZE = 50;
+    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, opts.limit ?? DEFAULT_PAGE_SIZE));
+
+    const conditions = [eq(submissionsTable.formId, formId)];
+    if (opts.cursor) {
+      const cursorDate = new Date(opts.cursor);
+      if (!Number.isNaN(cursorDate.getTime())) {
+        conditions.push(lt(submissionsTable.createdAt, cursorDate));
+      }
+    }
+
+    // Fetch one extra so we can detect "is there another page".
+    const rows = await db
       .select()
       .from(submissionsTable)
-      .where(eq(submissionsTable.formId, formId))
-      .orderBy(desc(submissionsTable.createdAt));
+      .where(and(...conditions))
+      .orderBy(desc(submissionsTable.createdAt))
+      .limit(limit + 1);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const last = items[items.length - 1];
+    const nextCursor = hasMore && last?.createdAt ? last.createdAt.toISOString() : null;
+    return { items, nextCursor };
   }
 
   // ─── Analytics ──────────────────────────────────────────────────────────────

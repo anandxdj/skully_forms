@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -31,6 +32,7 @@ import {
 import { trpc } from "~/trpc/client";
 import { toast } from "sonner";
 import { cn } from "~/lib/utils";
+import { ASSETS } from "~/lib/assets";
 
 // Random color arrays for Typeform-style form badge icons
 const FORM_BADGE_COLORS = [
@@ -144,18 +146,18 @@ export default function DashboardPageView() {
   ) || [];
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300 font-sans">
-      
+    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-300">
+
       {/* ==================== 1. SIDEBAR (Typeform-style) ==================== */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-border/50 bg-card/30 backdrop-blur-md select-none shrink-0">
+      <aside className="hidden lg:flex flex-col w-64 border-r border-sidebar-border bg-sidebar select-none shrink-0">
         {/* Header Branding */}
         <div className="h-16 px-6 border-b border-border/50 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
             <div className="p-1 rounded-lg bg-primary/10 border border-primary/20 text-primary transition-all duration-200">
               <Skull className="w-5 h-5 fill-current" />
             </div>
-            <span className="font-extrabold text-base tracking-tight text-foreground">
-              Skully Forms
+            <span className="font-heading font-extrabold text-base tracking-tight text-foreground">
+              Skully<span className="text-primary">Forms</span>
             </span>
           </Link>
           <span className="text-3xs font-black bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full">v1.0</span>
@@ -237,8 +239,8 @@ export default function DashboardPageView() {
         {/* Developer Session Profile */}
         <div className="p-4 border-t border-border/50 bg-muted/20 flex flex-col gap-2">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-lg shadow-sm font-black">
-              💀
+            <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-sm shrink-0">
+              <Skull className="w-5 h-5 fill-current" />
             </div>
             <div className="flex-1 min-w-0 text-left">
               <p className="text-2xs font-extrabold text-foreground truncate uppercase tracking-wide">{user?.fullName || "Developer Session"}</p>
@@ -329,6 +331,24 @@ export default function DashboardPageView() {
           </div>
         </header>
 
+        {/* Stats Bar — computed from real forms data */}
+        {!isLoading && !userLoading && mounted && forms && (
+          <div className="grid grid-cols-4 divide-x divide-border/50 border-b border-border/50 shrink-0">
+            {[
+              { value: forms.length, label: "Total Forms", sub: "in workspace", accent: false },
+              { value: forms.reduce((s, f) => s + f.submissionCount, 0).toLocaleString(), label: "Responses", sub: "all time", accent: true },
+              { value: forms.filter(f => f.published).length, label: "Published", sub: "live now", accent: true },
+              { value: forms.filter(f => !f.published).length, label: "Drafts", sub: "not live", accent: false },
+            ].map((stat) => (
+              <div key={stat.label} className="py-5 px-6 bg-background/60">
+                <p className={`font-heading text-2xl font-extrabold tracking-tighter leading-none ${stat.accent ? "text-success" : "text-foreground"}`}>{stat.value}</p>
+                <p className="text-3xs font-bold uppercase tracking-widest text-muted-foreground mt-1">{stat.label}</p>
+                <p className="text-4xs text-muted-foreground/60 mt-0.5">{stat.sub}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto px-6 py-8 sm:px-8 max-w-6xl w-full mx-auto space-y-8">
           
@@ -336,7 +356,7 @@ export default function DashboardPageView() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl sm:text-3xl font-black text-foreground">{activeWorkspace}</h2>
+                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">{activeWorkspace}</h2>
                 {forms && (
                   <span className="px-2 py-0.5 text-3xs font-extrabold rounded-full bg-primary/10 border border-primary/20 text-primary select-none uppercase tracking-wide">
                     {forms.length === 1 ? "1 Form" : `${forms.length} Forms`}
@@ -350,7 +370,7 @@ export default function DashboardPageView() {
             
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 text-xs font-bold text-primary-foreground bg-primary hover:opacity-95 rounded-xl transition-all duration-200 shadow-md shadow-primary/15 hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 text-xs font-bold text-primary-foreground bg-primary hover:opacity-95 rounded-xl transition-all duration-200 shadow-md shadow-primary/15 hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               Create form
@@ -381,23 +401,30 @@ export default function DashboardPageView() {
             /* Forms Representation */
             <div className="space-y-6">
               {filteredForms.length === 0 ? (
-                /* Empty forms state */
-                <div className="flex flex-col items-center justify-center text-center py-20 px-4 rounded-2xl border-2 border-dashed border-border/60 bg-card/25 backdrop-blur max-w-lg mx-auto space-y-5 animate-fade-in-up">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-inner">
-                    <Skull className="w-8 h-8 fill-current" />
+                /* Empty state with skeleton illustration */
+                <div className="flex flex-col items-center justify-center text-center py-12 px-4 rounded-2xl border-2 border-dashed border-border/60 bg-card/25 backdrop-blur max-w-lg mx-auto space-y-4 animate-fade-in-up">
+                  <div className="relative w-36 h-36 shrink-0">
+                    <Image
+                      src={ASSETS.skeletons.inBox}
+                      alt="No forms yet"
+                      fill
+                      className="object-contain drop-shadow-lg"
+                    />
                   </div>
                   <div className="space-y-1.5">
-                    <h3 className="text-lg font-bold text-foreground">No forms found</h3>
+                    <h3 className="text-lg font-bold text-foreground">
+                      {searchQuery ? "No forms matched" : "Your crypt is empty"}
+                    </h3>
                     <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
                       {searchQuery
-                        ? `No forms match your search filter "${searchQuery}". Try editing the keyword.`
-                        : "Start from scratch and create your first interactive Skully Form inside the database!"}
+                        ? `No forms match "${searchQuery}". Try a different keyword.`
+                        : "Create your first Skully Form and start collecting spooky responses."}
                     </p>
                   </div>
                   {!searchQuery && (
                     <button
                       onClick={() => setCreateModalOpen(true)}
-                      className="inline-flex items-center gap-1.5 px-4.5 py-2.5 text-xs font-bold text-primary-foreground bg-primary hover:opacity-95 rounded-xl transition-all shadow-md shadow-primary/10 active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-primary-foreground bg-primary hover:opacity-95 rounded-xl transition-all shadow-md shadow-primary/10 active:scale-95"
                     >
                       <Plus className="w-4 h-4 stroke-[3]" />
                       Create first form
@@ -529,7 +556,7 @@ export default function DashboardPageView() {
                     {filteredForms.map((form) => (
                       <div
                         key={form.id}
-                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-4.5 gap-4 hover:bg-muted/10 transition-colors"
+                        className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4 hover:bg-muted/10 transition-colors"
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
                           {/* Round alphabet visual logo */}
@@ -663,7 +690,7 @@ export default function DashboardPageView() {
                 <button
                   type="submit"
                   disabled={createFormMutation.isPending}
-                  className="inline-flex items-center justify-center gap-1.5 px-4.5 py-2.5 rounded-xl text-xs font-bold text-primary-foreground bg-primary hover:opacity-95 shadow-md shadow-primary/10 transition-all cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold text-primary-foreground bg-primary hover:opacity-95 shadow-md shadow-primary/10 transition-all cursor-pointer"
                 >
                   {createFormMutation.isPending ? (
                     <>

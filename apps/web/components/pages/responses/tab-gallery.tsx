@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import NextImage from "next/image";
 import { trpc } from "~/trpc/client";
 import { FormField } from "@repo/trpc/server/schemas/form-field-schemas";
 import { Loader2, AlertCircle, FileText, Download, Play, X, Image as ImageIcon } from "lucide-react";
 import { format } from "date-fns";
+import { ASSETS } from "~/lib/assets";
 
 interface TabGalleryProps {
   formId: string;
@@ -90,12 +92,21 @@ export default function TabGallery({ formId, fields }: TabGalleryProps) {
       </div>
 
       {fileFields.length === 0 ? (
-        <div className="p-12 border border-dashed border-border rounded-xl text-center text-xs text-muted-foreground select-none">
-          No File Upload questions are present in this form configuration.
+        <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl select-none space-y-3">
+          <div className="relative w-24 h-24">
+            <NextImage src={ASSETS.skeletons.inBox} alt="No file fields" fill className="object-contain drop-shadow" />
+          </div>
+          <p className="text-xs text-muted-foreground text-center max-w-[220px]">No File Upload fields in this form. Add one to collect attachments.</p>
         </div>
       ) : galleryItems.length === 0 ? (
-        <div className="p-12 border border-dashed border-border rounded-xl text-center text-xs text-muted-foreground select-none">
-          No files uploaded by respondents yet. Uploads will appear in this catalog grid!
+        <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl select-none space-y-3">
+          <div className="relative w-24 h-24">
+            <NextImage src={ASSETS.skeletons.inBox} alt="No uploads yet" fill className="object-contain drop-shadow" />
+          </div>
+          <div className="text-center space-y-1">
+            <p className="text-xs font-bold text-foreground">No attachments yet</p>
+            <p className="text-4xs text-muted-foreground max-w-[220px]">Uploads from respondents will appear here once they start submitting.</p>
+          </div>
         </div>
       ) : (
         /* Visual Media Grid */
@@ -112,14 +123,14 @@ export default function TabGallery({ formId, fields }: TabGalleryProps) {
               >
                 
                 {/* Visual Media Canvas (Image thumbs, audio controllers, video players) */}
-                <div className="bg-[#08080a] aspect-video w-full relative flex items-center justify-center overflow-hidden border-b border-border/40 select-none">
+                <div className="bg-muted/40 aspect-video w-full relative flex items-center justify-center overflow-hidden border-b border-border/40 select-none">
                   
                   {isImage && (
                     <img
                       src={item.url}
                       alt={item.name}
                       onClick={() => setActiveImageUrl(item.url)}
-                      className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300 cursor-pointer"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
                     />
                   )}
 

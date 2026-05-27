@@ -1,41 +1,57 @@
-/**
- * Strongly-typed asset path registry.
- * AI developers and human developers MUST use this constant map instead of hardcoding raw strings.
- * This guarantees path correctness and enables TypeScript compiler checks for assets.
- */
 export const ASSETS = {
   logos: {
-    // Brand logos
     symbol: "/assets/logos/logo-symbol.svg",
     wordmarkDark: "/assets/logos/logo-wordmark-dark.svg",
     wordmarkLight: "/assets/logos/logo-wordmark-light.svg",
   },
   illustrations: {
-    // Page state illustrations
     emptyDashboard: "/assets/illustrations/illustration-empty-dashboard.svg",
     submissionSuccess: "/assets/illustrations/illustration-submission-success.svg",
+    // Hero skeleton (boba — light theme, transparent bg)
     heroSkeleton: "/assets/illustrations/illustration-hero-skeleton.png",
-    heroSkeletonDark: "/assets/illustrations/illustration-hero-skeleton-dark.png",
-    developerSkeletonLight: "/assets/illustrations/illustration-developer-skeleton-light.png",
-    developerSkeletonDark: "/assets/illustrations/illustration-developer-skeleton-dark.png",
-    gamerSkeletonLight: "/assets/illustrations/illustration-gamer-skeleton-light.png",
-    gamerSkeletonDark: "/assets/illustrations/illustration-gamer-skeleton-dark.png",
-    skaterSkeletonLight: "/assets/illustrations/illustration-skater-skeleton-light.png",
-    skaterSkeletonDark: "/assets/illustrations/illustration-skater-skeleton-dark.png",
-    successSkeletonLight: "/assets/illustrations/illustration-success-skeleton-light.png",
-    successSkeletonDark: "/assets/illustrations/illustration-success-skeleton-dark.png",
-    emptyBoxSkeletonLight: "/assets/illustrations/illustration-box-skeleton-light.png",
-    emptyBoxSkeletonDark: "/assets/illustrations/illustration-box-skeleton-dark.png",
+    heroSkeletonDark: "/assets/illustrations/illustration-hero-skeleton.png",
+    // Legacy keys kept for compatibility
+    developerSkeletonLight: "/assets/skeletons/Skeleton%20with%20laptop.png",
+    developerSkeletonDark: "/assets/skeletons/Skeleton%20with%20laptop.png",
+    gamerSkeletonLight: "/assets/skeletons/Skeleton%20Gaming.png",
+    gamerSkeletonDark: "/assets/skeletons/Skeleton%20Gaming.png",
+    skaterSkeletonLight: "/assets/skeletons/Skeleton%20with%20skateboard.png",
+    skaterSkeletonDark: "/assets/skeletons/Skeleton%20with%20skateboard.png",
+    successSkeletonLight: "/assets/skeletons/Skeleton%20Dancing.png",
+    successSkeletonDark: "/assets/skeletons/Skeleton%20Dancing.png",
+    emptyBoxSkeletonLight: "/assets/skeletons/skeleton_in_box.png",
+    emptyBoxSkeletonDark: "/assets/skeletons/skeleton_in_box.png",
+  },
+  skeletons: {
+    gaming: "/assets/skeletons/Skeleton%20Gaming.png",
+    laptop: "/assets/skeletons/Skeleton%20with%20laptop.png",
+    writingDiary: "/assets/skeletons/Skeleton_Writing_Diary.png",
+    cookieHoodie: "/assets/skeletons/Skeleton%20with%20jacket%20with%20cookie.png",
+    moneyBag: "/assets/skeletons/skeleton_with_money.png",
+    inBox: "/assets/skeletons/skeleton_in_box.png",
+    greenPlants: "/assets/skeletons/Green-skeleton-with-plants.png",
+    skateboard: "/assets/skeletons/Skeleton%20with%20skateboard.png",
+    dancing: "/assets/skeletons/Skeleton%20Dancing.png",
+    greenCap: "/assets/skeletons/Green%20skeleton%20with%20cap.png",
+  },
+  backgrounds: {
+    pink: "/assets/background/pink%20background.png",
+    pinkCloud: "/assets/background/pink%20Cloud%20Background.png",
+    pinkToo: "/assets/background/pink%20background%20too.png",
+    pinkStage: "/assets/background/pink%20stage.png",
+    dark: "/assets/background/dark%20background.png",
+    dark2: "/assets/background/Dark%20Background%202.png",
+    leaf: "/assets/background/Leaf%20Background.png",
+    goldenLeaf: "/assets/background/Golden%20Leaf.png",
+    frame: "/assets/background/frame_052%202.png",
   },
   textures: {
-    // Backdrop background grids and meshes
     gridOverlay: "/assets/textures/texture-grid-sunset.svg",
     darkMesh: "/assets/textures/texture-mesh-dark.webp",
   },
   icons: {
-    // Custom non-standard SVG icons (use Lucide React for standard dashboard items)
     cyberSkully: "/assets/icons/icon-custom-cyberpunk-skull.svg",
-  }
+  },
 } as const;
 
 export type AssetRegistry = typeof ASSETS;

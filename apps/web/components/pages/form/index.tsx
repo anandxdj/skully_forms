@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { trpc } from "~/trpc/client";
 import { toast } from "sonner";
-import { Loader2, AlertCircle, Skull, RotateCcw } from "lucide-react";
+import { Loader2, AlertCircle, RotateCcw, CheckCircle } from "lucide-react";
 import { FormField } from "@repo/trpc/server/schemas/form-field-schemas";
 import { LayoutMode } from "@repo/trpc/server/schemas/form-schemas";
+import { ASSETS } from "~/lib/assets";
 
 import ThemeWrapper from "./theme-wrapper";
 import LayoutScroll from "./layout-scroll";
@@ -120,7 +122,7 @@ export default function PublicFormPageView({ slug }: PublicFormPageViewProps) {
   // Loader
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-foreground">
+      <div className="flex flex-col items-center justify-center min-h-dvh bg-background text-foreground">
         <Loader2 className="w-10 h-10 text-primary animate-spin" />
         <p className="text-xs font-mono font-bold mt-4 animate-pulse">Resolving dynamic form schema...</p>
       </div>
@@ -130,12 +132,12 @@ export default function PublicFormPageView({ slug }: PublicFormPageViewProps) {
   // Error Page (draft form or wrong slug)
   if (error || !form) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-foreground px-4 text-center space-y-5">
+      <div className="flex flex-col items-center justify-center min-h-dvh bg-background text-foreground px-4 text-center space-y-5">
         <div className="w-14 h-14 rounded-full bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center">
           <AlertCircle className="w-7 h-7" />
         </div>
         <div className="space-y-1.5">
-          <h2 className="text-lg font-bold text-foreground">Form is not available</h2>
+          <h2 className="text-lg font-heading font-extrabold text-foreground">Form is not available</h2>
           <p className="text-xs text-muted-foreground max-w-sm">
             {error?.message || "Form might be in draft mode. Creators must toggle 'Publish Live' in builder to enable public access."}
           </p>
@@ -148,19 +150,29 @@ export default function PublicFormPageView({ slug }: PublicFormPageViewProps) {
     <ThemeWrapper theme={form.theme as any}>
       {submitted ? (
         /* 5.1 SUCCESS SCREEN */
-        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6">
-          <div className="w-18 h-18 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-lg animate-bounce">
-            <Skull className="w-9 h-9 fill-current animate-pulse" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-6 min-h-dvh bg-section-mint animate-fade-in">
+          {/* Green success badge */}
+          <div className="w-14 h-14 rounded-full bg-success/15 border border-success/30 text-success flex items-center justify-center shadow-sm animate-scale-in">
+            <CheckCircle className="w-7 h-7 stroke-[1.5]" />
+          </div>
+          <div className="relative w-36 h-36 select-none">
+            <Image
+              src={ASSETS.skeletons.dancing}
+              alt="Success skeleton celebration"
+              fill
+              className="object-contain drop-shadow-lg"
+              priority
+            />
           </div>
           <div className="space-y-2.5">
-            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Form Submitted Successfully!</h2>
-            <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">
-              Thank you for completing our questionnaire. Your response has been securely logged.
+            <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-success tracking-tight">Response Sealed!</h2>
+            <p className="text-xs text-foreground/60 max-w-xs mx-auto leading-relaxed">
+              Your answers have been logged in the crypt. Thank you for completing this form.
             </p>
           </div>
           <button
             onClick={handleResetForm}
-            className="inline-flex items-center gap-1.5 text-2xs font-black text-primary bg-primary/10 border border-primary/20 px-4 py-2 rounded-lg hover:bg-primary/20 transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-2xs font-black text-success bg-success/10 border border-success/25 px-4 py-2.5 rounded-lg hover:bg-success/20 transition-all active:scale-95 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Submit Another Response

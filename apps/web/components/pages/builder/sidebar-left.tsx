@@ -12,12 +12,13 @@ import {
   CheckSquare,
   UploadCloud,
   Star,
-  Sparkles,
+  X,
 } from "lucide-react";
 import { FormFieldType } from "@repo/trpc/server/schemas/form-field-schemas";
 
 interface SidebarLeftProps {
-  onAddField: (type: FormFieldType) => void;
+  onSelectType: (type: FormFieldType) => void;
+  onClose: () => void;
 }
 
 interface FieldTypeConfig {
@@ -29,114 +30,76 @@ interface FieldTypeConfig {
 }
 
 const FIELD_TYPES: FieldTypeConfig[] = [
-  {
-    type: "TEXT",
-    label: "Short Text",
-    description: "Standard single line response",
-    icon: Type,
-    color: "text-[#00f5ff] bg-[#00f5ff]/10 border-[#00f5ff]/20",
-  },
-  {
-    type: "TEXTAREA",
-    label: "Long Text",
-    description: "Multi-line rich commentary",
-    icon: AlignLeft,
-    color: "text-[#9d4edd] bg-[#9d4edd]/10 border-[#9d4edd]/20",
-  },
-  {
-    type: "NUMBER",
-    label: "Number",
-    description: "Integers or decimal values",
-    icon: Binary,
-    color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
-  },
-  {
-    type: "EMAIL",
-    label: "Email Address",
-    description: "Validated email input",
-    icon: Mail,
-    color: "text-rose-500 bg-rose-500/10 border-rose-500/20",
-  },
-  {
-    type: "DATE",
-    label: "Date Picker",
-    description: "Calendar day selector",
-    icon: Calendar,
-    color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
-  },
-  {
-    type: "SELECT",
-    label: "Select Menu",
-    description: "Accordion dropdown choices",
-    icon: ListCollapse,
-    color: "text-sky-500 bg-sky-500/10 border-sky-500/20",
-  },
-  {
-    type: "RADIO",
-    label: "Single Choice",
-    description: "Choose exactly one option",
-    icon: CircleDot,
-    color: "text-indigo-500 bg-indigo-500/10 border-indigo-500/20",
-  },
-  {
-    type: "CHECKBOX",
-    label: "Multiple Choice",
-    description: "Toggle multiple conditions",
-    icon: CheckSquare,
-    color: "text-[#ff2e8c] bg-[#ff2e8c]/10 border-[#ff2e8c]/20",
-  },
-  {
-    type: "FILE",
-    label: "File Upload",
-    description: "Attachments, images, video",
-    icon: UploadCloud,
-    color: "text-[#00f5ff] bg-[#00f5ff]/10 border-[#00f5ff]/20",
-  },
-  {
-    type: "RATING",
-    label: "Spooky Rating",
-    description: "Star rating selector",
-    icon: Star,
-    color: "text-[#ff9e00] bg-[#ff9e00]/10 border-[#ff9e00]/20",
-  },
+  { type: "TEXT",     label: "Short Text",      description: "Single-line answer",      icon: Type,         color: "text-sky-400 bg-sky-400/10 border-sky-400/20" },
+  { type: "TEXTAREA", label: "Long Text",        description: "Multi-line paragraph",    icon: AlignLeft,    color: "text-violet-400 bg-violet-400/10 border-violet-400/20" },
+  { type: "NUMBER",   label: "Number",           description: "Integer or decimal",      icon: Binary,       color: "text-amber-400 bg-amber-400/10 border-amber-400/20" },
+  { type: "EMAIL",    label: "Email",            description: "Validated email",         icon: Mail,         color: "text-rose-400 bg-rose-400/10 border-rose-400/20" },
+  { type: "DATE",     label: "Date",             description: "Calendar picker",         icon: Calendar,     color: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
+  { type: "SELECT",   label: "Dropdown",         description: "Pick one from list",      icon: ListCollapse, color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20" },
+  { type: "RADIO",    label: "Single Choice",    description: "One option only",         icon: CircleDot,    color: "text-indigo-400 bg-indigo-400/10 border-indigo-400/20" },
+  { type: "CHECKBOX", label: "Multiple Choice",  description: "Toggle many options",     icon: CheckSquare,  color: "text-pink-400 bg-pink-400/10 border-pink-400/20" },
+  { type: "FILE",     label: "File Upload",      description: "Attach file or image",   icon: UploadCloud,  color: "text-teal-400 bg-teal-400/10 border-teal-400/20" },
+  { type: "RATING",   label: "Star Rating",      description: "Score on a scale",        icon: Star,         color: "text-orange-400 bg-orange-400/10 border-orange-400/20" },
 ];
 
-export default function SidebarLeft({ onAddField }: SidebarLeftProps) {
+export default function SidebarLeft({ onSelectType, onClose }: SidebarLeftProps) {
   return (
-    <aside className="w-72 border-r border-border/50 bg-card/20 backdrop-blur-md p-5 flex flex-col h-full select-none shrink-0">
-      <div className="flex items-center gap-2 pb-4 mb-4 border-b border-border/40">
-        <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-          Field Palette
-        </h3>
-      </div>
+    /* Backdrop */
+    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
-      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
-        {FIELD_TYPES.map((cfg) => {
-          const Icon = cfg.icon;
-          return (
-            <button
-              key={cfg.type}
-              onClick={() => onAddField(cfg.type)}
-              className="w-full text-left p-3 rounded-xl border border-border/80 bg-card hover:bg-card/80 hover:border-primary/40 hover:scale-[1.01] hover:shadow-[0_0_15px_rgba(237,145,148,0.05)] transition-all duration-200 group flex items-start gap-3 cursor-pointer"
-            >
-              <div
-                className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 ${cfg.color}`}
-              >
-                <Icon className="w-4.5 h-4.5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-2xs font-extrabold text-foreground group-hover:text-primary transition-colors">
-                  {cfg.label}
-                </p>
-                <p className="text-4xs text-muted-foreground/80 leading-normal mt-0.5">
-                  {cfg.description}
-                </p>
-              </div>
-            </button>
-          );
-        })}
+      {/* Drawer panel */}
+      <div className="relative z-10 bg-card border-t border-border/60 rounded-t-3xl shadow-2xl animate-drawer-up max-h-[75vh] flex flex-col">
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-border/60" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/40 shrink-0">
+          <div>
+            <h3 className="text-sm font-bold text-foreground">Add a question</h3>
+            <p className="text-3xs text-muted-foreground mt-0.5">Choose a field type to insert</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Field type grid */}
+        <div className="overflow-y-auto scrollbar-none p-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            {FIELD_TYPES.map((cfg) => {
+              const Icon = cfg.icon;
+              return (
+                <button
+                  key={cfg.type}
+                  onClick={() => onSelectType(cfg.type)}
+                  className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl border border-border/50 bg-background hover:bg-card hover:border-primary/30 hover:shadow-md transition-all duration-150 cursor-pointer text-center"
+                >
+                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 transition-transform group-hover:scale-110 ${cfg.color}`}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
+                      {cfg.label}
+                    </p>
+                    <p className="text-4xs text-muted-foreground/70 mt-0.5 leading-snug">
+                      {cfg.description}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </aside>
+    </div>
   );
 }

@@ -3,21 +3,18 @@ import { usersTable, type SelectUser } from "@repo/database/schema";
 import { env } from "../env";
 import { googleOAuth2Client } from "../clients/google-oauth";
 import { GetAuthenticationMethodOutputSchema } from "./model";
-import crypto from "crypto";
+import { hashPassword, verifyPassword, needsRehash } from "../auth/password";
 
-function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
-  return `${salt}:${hash}`;
-}
-
-function verifyPassword(password: string, storedHash: string): boolean {
-  const parts = storedHash.split(":");
-  if (parts.length !== 2) return false;
-  const [salt, hash] = parts;
-  if (!salt || !hash) return false;
-  const verifyHash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
-  return hash === verifyHash;
+// Distinct error class so the router/error-formatter can map to the right
+// HTTP status without leaking the underlying DB error.
+export class AuthError extends Error {
+  constructor(
+    message: string,
+    public readonly code: "INVALID_CREDENTIALS" | "OAUTH_ONLY" | "INTERNAL" = "INVALID_CREDENTIALS",
+  ) {
+    super(message);
+    this.name = "AuthError";
+  }
 }
 
 class UserService {
@@ -46,16 +43,31 @@ class UserService {
     return users[0] || null;
   }
 
-  public async createUser(data: { email: string; fullName: string; password?: string }): Promise<SelectUser> {
+  /**
+   * Create a user account. Returns `{ user, created }`:
+   *   - `created: true`  → a fresh row was inserted.
+   *   - `created: false` → email already existed; no row inserted, no fields touched.
+   * Callers should return the same outward response in both cases so that
+   * sign-up cannot be used to enumerate registered emails.
+   */
+  public async createUser(data: {
+    email: string;
+    fullName: string;
+    password?: string;
+  }): Promise<{ user: SelectUser; created: boolean }> {
     const emailLower = data.email.toLowerCase().trim();
-    
-    // Check email uniqueness
-    const users = await db.select().from(usersTable).where(eq(usersTable.email, emailLower)).limit(1);
-    if (users.length > 0) {
-      throw new Error("A user with this email address already exists.");
+
+    const existing = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, emailLower))
+      .limit(1);
+
+    if (existing.length > 0 && existing[0]) {
+      return { user: existing[0], created: false };
     }
 
-    const passwordHash = data.password ? hashPassword(data.password) : null;
+    const passwordHash = data.password ? await hashPassword(data.password) : null;
 
     const [newUser] = await db
       .insert(usersTable)
@@ -67,33 +79,64 @@ class UserService {
       .returning();
 
     if (!newUser) {
-      throw new Error("Failed to create user account.");
+      throw new AuthError("Failed to create user account.", "INTERNAL");
     }
 
-    return newUser;
+    return { user: newUser, created: true };
   }
 
   public async authenticateUser(data: { email: string; password?: string }): Promise<SelectUser> {
     const emailLower = data.email.toLowerCase().trim();
-    
-    const users = await db.select().from(usersTable).where(eq(usersTable.email, emailLower)).limit(1);
+
+    const users = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, emailLower))
+      .limit(1);
     const user = users[0];
+
+    // To defend against user-enumeration via timing, do the same amount of
+    // crypto work whether or not the row exists.
     if (!user) {
-      throw new Error("Invalid email or password.");
+      // Dummy verify against a fixed (well-formed) hash so timing doesn't leak
+      // whether the account exists.
+      await verifyPassword(
+        data.password ?? "",
+        "scrypt$32768$8$1$00000000000000000000000000000000$" +
+          "0".repeat(128),
+      );
+      throw new AuthError("Invalid email or password.");
     }
 
-    if (data.password) {
-      if (!user.passwordHash) {
-        throw new Error(
-          "This account is configured for Google/Social sign in. Please use your social provider to log in."
-        );
+    if (!data.password) {
+      throw new AuthError("Invalid email or password.");
+    }
+
+    if (!user.passwordHash) {
+      throw new AuthError(
+        "This account uses social sign-in. Please continue with your provider.",
+        "OAUTH_ONLY",
+      );
+    }
+
+    const ok = await verifyPassword(data.password, user.passwordHash);
+    if (!ok) {
+      throw new AuthError("Invalid email or password.");
+    }
+
+    // Opportunistic rehash: silently upgrade legacy / weaker hashes on
+    // successful login so the user is never aware of the migration.
+    if (needsRehash(user.passwordHash)) {
+      try {
+        const newHash = await hashPassword(data.password);
+        await db
+          .update(usersTable)
+          .set({ passwordHash: newHash })
+          .where(eq(usersTable.id, user.id));
+        user.passwordHash = newHash;
+      } catch {
+        // Non-fatal — login still succeeds even if the rehash write fails.
       }
-      const isValid = verifyPassword(data.password, user.passwordHash);
-      if (!isValid) {
-        throw new Error("Invalid email or password.");
-      }
-    } else {
-      throw new Error("Password is required for credentials login.");
     }
 
     return user;
