@@ -512,6 +512,13 @@ export default function LandingPageView() {
           <div className="absolute top-[20%] left-[-10%] w-[380px] h-[380px] rounded-full bg-accent-purple/5 blur-[100px]" />
           <div className="absolute bottom-[10%] right-[-10%] w-[420px] h-[420px] rounded-full bg-primary/5 blur-[120px]" />
         </div>
+        {/* Decorative skeleton accents */}
+        <div className="absolute bottom-4 left-6 pointer-events-none select-none opacity-[0.14] z-0 hidden lg:block">
+          <Image src={ASSETS.skeletons.writingDiary} alt="" width={95} height={95} className="object-contain" />
+        </div>
+        <div className="absolute top-6 right-8 pointer-events-none select-none opacity-[0.11] z-0 hidden lg:block">
+          <Image src={ASSETS.skeletons.moneyBag} alt="" width={100} height={100} className="object-contain" />
+        </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
@@ -653,6 +660,13 @@ export default function LandingPageView() {
       {/* ── STATS STRIP ──────────────────────────────────────────────── */}
       <section className="py-12 md:py-16 relative overflow-hidden bg-background">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[100px] bg-primary/5 blur-[90px] pointer-events-none select-none" />
+        {/* Decorative skeleton accents */}
+        <div className="absolute bottom-2 right-10 pointer-events-none select-none opacity-[0.14] z-0 hidden lg:block">
+          <Image src={ASSETS.skeletons.inBox} alt="" width={100} height={100} className="object-contain" />
+        </div>
+        <div className="absolute top-3 left-8 pointer-events-none select-none opacity-[0.11] z-0 hidden lg:block">
+          <Image src={ASSETS.skeletons.greenCap} alt="" width={90} height={90} className="object-contain" />
+        </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -682,7 +696,14 @@ export default function LandingPageView() {
       </section>
 
       {/* ── FEATURES GRID ────────────────────────────────────────────── */}
-      <section id="features" className="py-14 md:py-20 bg-background">
+      <section id="features" className="py-14 md:py-20 bg-background relative overflow-hidden">
+        {/* Decorative skeleton accents */}
+        <div className="absolute top-1/2 -translate-y-1/2 right-4 pointer-events-none select-none opacity-[0.13] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_012 2.png" alt="" width={110} height={110} className="object-contain" />
+        </div>
+        <div className="absolute bottom-8 left-4 pointer-events-none select-none opacity-[0.11] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_015 2.png" alt="" width={100} height={100} className="object-contain" />
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
@@ -749,6 +770,13 @@ export default function LandingPageView() {
       <section id="sandbox" className="py-14 md:py-20 bg-section-peach relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none select-none">
           <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-primary/5 blur-[80px]" />
+        </div>
+        {/* Decorative skeleton accents */}
+        <div className="absolute bottom-6 left-6 pointer-events-none select-none opacity-[0.14] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_035 2.png" alt="" width={100} height={100} className="object-contain" />
+        </div>
+        <div className="absolute top-8 right-10 pointer-events-none select-none opacity-[0.11] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_040 2.png" alt="" width={90} height={90} className="object-contain" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -958,7 +986,14 @@ export default function LandingPageView() {
       </section>
 
       {/* ── PRICING ──────────────────────────────────────────────────── */}
-      <section id="pricing" className="py-14 md:py-20 bg-section-lavender relative">
+      <section id="pricing" className="py-14 md:py-20 bg-section-lavender relative overflow-hidden">
+        {/* Decorative skeleton accents */}
+        <div className="absolute top-8 left-8 pointer-events-none select-none opacity-[0.12] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_045 2.png" alt="" width={110} height={110} className="object-contain" />
+        </div>
+        <div className="absolute bottom-6 right-8 pointer-events-none select-none opacity-[0.13] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_050 2.png" alt="" width={100} height={100} className="object-contain" />
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="text-center max-w-2xl mx-auto mb-10 space-y-3">
@@ -1100,7 +1135,14 @@ export default function LandingPageView() {
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────── */}
-      <footer className="border-t border-border/50 bg-background/85 backdrop-blur-md transition-colors duration-300">
+      <footer className="border-t border-border/50 bg-background/85 backdrop-blur-md transition-colors duration-300 relative overflow-hidden">
+        {/* Decorative skeleton accents */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-6 pointer-events-none select-none opacity-[0.16] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_030 2.png" alt="" width={80} height={80} className="object-contain" />
+        </div>
+        <div className="absolute bottom-4 right-8 pointer-events-none select-none opacity-[0.11] z-0 hidden lg:block">
+          <Image src="/assets/fun_skeleton/frame_020 2.png" alt="" width={90} height={90} className="object-contain" />
+        </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-border/50">

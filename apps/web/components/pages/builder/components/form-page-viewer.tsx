@@ -25,8 +25,6 @@ export default function FormPageViewer({
 }: FormPageViewerProps) {
   const vars = themeVars(theme);
   const illus = THEME_ILLUSTRATIONS[theme];
-  // Field-type skeleton takes priority; fall back to theme skeleton
-  const skeletonSrc = (fieldType && FIELD_TYPE_SKELETONS[fieldType]) ?? illus?.skeleton;
 
   return (
     <div
@@ -50,11 +48,19 @@ export default function FormPageViewer({
         </div>
       )}
 
-      {/* Skeleton character — field-type-specific when active, else theme default */}
-      {skeletonSrc && (
-        <div className="absolute bottom-0 right-0 w-40 h-52 z-[2] pointer-events-none select-none">
+      {/* Theme skeleton — always visible when theme has one, bottom-right */}
+      {illus?.skeleton && (
+        <div className="absolute bottom-0 right-0 w-40 h-52 z-[2] pointer-events-none select-none transition-all duration-300">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={skeletonSrc} alt="" className="w-full h-full object-contain object-bottom drop-shadow-2xl" />
+          <img src={illus.skeleton} alt="" className="w-full h-full object-contain object-bottom drop-shadow-2xl" />
+        </div>
+      )}
+
+      {/* Field-type skeleton — shown when a field is active, bottom-left */}
+      {fieldType && FIELD_TYPE_SKELETONS[fieldType] && (
+        <div className="absolute bottom-0 left-0 w-36 h-48 z-[2] pointer-events-none select-none transition-all duration-300">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={FIELD_TYPE_SKELETONS[fieldType]} alt="" className="w-full h-full object-contain object-bottom drop-shadow-2xl" />
         </div>
       )}
 

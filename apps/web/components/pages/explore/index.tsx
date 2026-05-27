@@ -2,9 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
-import { Skull, ArrowRight, Loader2, FileText, Globe } from "lucide-react";
+import { Skull, ArrowRight, Loader2, FileText, Globe, LayoutDashboard } from "lucide-react";
 import { trpc } from "~/trpc/client";
 import { cn } from "~/lib/utils";
+import { useRequireAuth } from "~/hooks/use-require-auth";
 
 const THEME_LABELS: Record<string, { label: string; color: string }> = {
   slate:       { label: "Midnight Slate",   color: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30" },
@@ -20,7 +21,22 @@ const THEME_LABELS: Record<string, { label: string; color: string }> = {
 };
 
 export default function ExplorePageView() {
-  const { data, isLoading, isError } = trpc.forms.getPublicForms.useQuery({ limit: 24 });
+  const { user, isLoading: authLoading } = useRequireAuth();
+  const { data, isLoading, isError } = trpc.forms.getPublicForms.useQuery(
+    { limit: 24 },
+    { enabled: !!user },
+  );
+
+  // While auth resolves (or while redirecting an anonymous visitor to /login),
+  // render a thin loader rather than the public marketing chrome — the page
+  // is for signed-in creators only.
+  if (authLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -31,20 +47,13 @@ export default function ExplorePageView() {
             <Skull className="w-5 h-5 text-primary" />
             Skully Forms
           </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Sign in
-            </Link>
-            <Link
-              href="/login"
-              className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              Get started
-            </Link>
-          </div>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            Dashboard
+          </Link>
         </div>
       </div>
 
@@ -86,7 +95,7 @@ export default function ExplorePageView() {
               <p className="text-sm mt-1">Be the first to publish a form!</p>
             </div>
             <Link
-              href="/login"
+              href="/dashboard"
               className="flex items-center gap-2 text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
             >
               Create a form <ArrowRight className="w-3.5 h-3.5" />

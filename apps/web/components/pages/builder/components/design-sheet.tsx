@@ -24,7 +24,15 @@ const THEME_OPTIONS: { id: Theme; label: string; desc: string; preview: string }
   { id: "skullyNeon",   label: "Neon Gaming",        desc: "Electric green on dark",     preview: "from-[#0a0a1a] via-[#00ff87]/30 to-[#0a0a1a] border-[#00ff87]" },
   { id: "skullyGold",   label: "Golden Skull",       desc: "Rich gold on near-black",    preview: "from-[#1a1000] via-[#c9a227]/40 to-[#1a0a00] border-[#c9a227]" },
   { id: "skullyGreen",  label: "Jungle Bones",       desc: "Deep jungle with leaf green", preview: "from-[#071a0a] via-[#4ade80]/30 to-[#071a0a] border-[#4ade80]" },
-  { id: "skullyParty",  label: "Party Skeleton",     desc: "Hot pink celebration",       preview: "from-[#F5D0E8]/60 via-[#ec4899]/40 to-[#fdf4ff] border-[#ec4899]" },
+  { id: "skullyParty",  label: "Party Skeleton",     desc: "Hot pink celebration",         preview: "from-[#F5D0E8]/60 via-[#ec4899]/40 to-[#fdf4ff] border-[#ec4899]" },
+  { id: "skullySpace",  label: "Cosmic Space",       desc: "Deep navy and electric cyan",  preview: "from-[#020814] via-[#00c8ff]/30 to-[#0a1628] border-[#00c8ff]" },
+  { id: "skullyWitch",  label: "Witchy Cozy",        desc: "Dark purple with warm cream",  preview: "from-[#0d0616] via-[#9b59e8]/30 to-[#1a0b2e] border-[#9b59e8]" },
+  { id: "skullyAutumn", label: "Autumn Cozy",        desc: "Warm amber and orange leaves", preview: "from-[#2d1a08] via-[#e8860a]/35 to-[#3d2010] border-[#e8860a]" },
+  { id: "skullyOcean",  label: "Ocean Wave",         desc: "Deep teal ocean depths",       preview: "from-[#071420] via-[#00b4d8]/30 to-[#0a1e30] border-[#00b4d8]" },
+  { id: "skullyPunk",   label: "Punk Rock",          desc: "Black with hot neon pink",     preview: "from-[#050505] via-[#ff0077]/30 to-[#0d0008] border-[#ff0077]" },
+  { id: "skullyZen",    label: "Zen Garden",         desc: "Soft sage and warm cream",     preview: "from-[#f0f4e8]/60 via-[#6fa46a]/30 to-[#f8faf0] border-[#6fa46a]" },
+  { id: "skullyRoyal",  label: "Royal Kingdom",      desc: "Deep purple and gold crown",   preview: "from-[#120828] via-[#c9a227]/35 to-[#1a0a3a] border-[#c9a227]" },
+  { id: "skullyDream",  label: "Dreamy Skies",       desc: "Pastel rose and fluffy clouds",preview: "from-[#fdf0f5]/60 via-[#e8a0c8]/40 to-[#fef8fb] border-[#e8a0c8]" },
 ];
 
 interface DesignSheetProps {

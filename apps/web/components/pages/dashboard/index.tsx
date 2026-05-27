@@ -55,8 +55,6 @@ export default function DashboardPageView() {
   // Layout states
   const [layoutMode, setLayoutMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeWorkspace, setActiveWorkspace] = useState("My Workspace");
-  const [workspaceDropdownOpen, setWorkspaceDropdownOpen] = useState(false);
 
   // Form creation modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -151,46 +149,7 @@ export default function DashboardPageView() {
           <span className="text-3xs font-black bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full">v1.0</span>
         </div>
 
-        {/* Workspace Selector */}
-        <div className="p-4 relative">
-          <button
-            onClick={() => setWorkspaceDropdownOpen(!workspaceDropdownOpen)}
-            className="w-full flex items-center justify-between p-2.5 rounded-xl border border-border bg-card/60 hover:bg-card text-left transition-all duration-200 text-xs font-bold"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center text-3xs font-black shadow-sm">
-                {activeWorkspace.split(" ").map(w => w[0]).join("")}
-              </div>
-              <span className="truncate text-foreground/90">{activeWorkspace}</span>
-            </div>
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
 
-          {/* Workspace Dropdown Panel */}
-          {workspaceDropdownOpen && (
-            <div className="absolute top-16 left-4 right-4 z-50 rounded-xl border border-border bg-card/95 shadow-xl p-1.5 space-y-1 backdrop-blur-md animate-fade-in">
-              {["My Workspace", "Developer Sandbox", "Spooky Workspace"].map((w) => (
-                <button
-                  key={w}
-                  onClick={() => {
-                    setActiveWorkspace(w);
-                    setWorkspaceDropdownOpen(false);
-                    toast.info(`Switched to ${w}`);
-                  }}
-                  className={cn(
-                    "w-full text-left p-2 rounded-lg text-xs transition-colors duration-150 flex items-center gap-2 font-semibold",
-                    activeWorkspace === w
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Folder className="w-3.5 h-3.5" />
-                  {w}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Navigation Section */}
         <div className="flex-1 px-3 py-2 space-y-1">
@@ -307,11 +266,6 @@ export default function DashboardPageView() {
               )}
             </button>
 
-            {/* Mobile Workspace Initials Indicator */}
-            <div className="lg:hidden w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 text-primary flex items-center justify-center text-xs font-black shadow-sm select-none">
-              MW
-            </div>
-
           </div>
         </header>
 
@@ -340,7 +294,7 @@ export default function DashboardPageView() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">{activeWorkspace}</h2>
+                <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">My Workspace</h2>
                 {forms && (
                   <span className="px-2 py-0.5 text-3xs font-extrabold rounded-full bg-primary/10 border border-primary/20 text-primary select-none uppercase tracking-wide">
                     {forms.length === 1 ? "1 Form" : `${forms.length} Forms`}

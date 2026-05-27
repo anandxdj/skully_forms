@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   Skull,
@@ -25,17 +25,31 @@ import { useAuth } from "~/providers/auth";
 
 type AuthView = "login" | "signup" | "forgot" | "check-email";
 
+/**
+ * Returns the post-login destination based on the `?next=` query param.
+ * Only same-origin relative paths are allowed so we cannot be tricked into
+ * sending an authenticated user to a third-party site (open-redirect).
+ */
+function safeNextPath(raw: string | null, fallback = "/dashboard"): string {
+  if (!raw) return fallback;
+  if (!raw.startsWith("/")) return fallback;
+  if (raw.startsWith("//") || raw.startsWith("/\\")) return fallback;
+  return raw;
+}
+
 export default function LoginPageView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = safeNextPath(searchParams.get("next"));
   const { user, isLoading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.replace("/dashboard");
+      router.replace(nextPath);
     }
-  }, [authLoading, user, router]);
+  }, [authLoading, user, router, nextPath]);
 
   // Auth local states
   const [currentView, setCurrentView] = useState<AuthView>("login");
@@ -51,7 +65,7 @@ export default function LoginPageView() {
   const loginMutation = trpc.auth.signIn.useMutation({
     onSuccess: () => {
       toast.success("Welcome back to Skully Forms!");
-      router.push("/dashboard");
+      router.push(nextPath);
     },
     onError: (err) => {
       toast.error(err.message || "Failed to sign in. Please check your credentials.");
@@ -61,7 +75,7 @@ export default function LoginPageView() {
   const signUpMutation = trpc.auth.signUp.useMutation({
     onSuccess: () => {
       toast.success("Spooky account created! Directing to dashboard...");
-      router.push("/dashboard");
+      router.push(nextPath);
     },
     onError: (err) => {
       toast.error(err.message || "Failed to create account. Please check your inputs.");
