@@ -109,6 +109,7 @@ class FormService {
     if (input.title !== undefined) updatePayload.title = input.title;
     if (input.description !== undefined) updatePayload.description = input.description;
     if (input.published !== undefined) updatePayload.published = input.published;
+    if (input.visibility !== undefined) updatePayload.visibility = input.visibility;
     if (input.layoutMode !== undefined) updatePayload.layoutMode = input.layoutMode;
     if (input.theme !== undefined) updatePayload.theme = input.theme;
     if (input.fields !== undefined) updatePayload.fields = input.fields;
@@ -126,6 +127,21 @@ class FormService {
           });
         }
         updatePayload.webhookUrl = input.webhookUrl;
+      }
+    }
+    if (input.expiresAt !== undefined) {
+      // null explicitly clears the schedule. String is coerced to Date.
+      if (input.expiresAt === null) {
+        updatePayload.expiresAt = null;
+      } else {
+        const date = input.expiresAt instanceof Date ? input.expiresAt : new Date(input.expiresAt);
+        if (Number.isNaN(date.getTime())) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid expiresAt date.",
+          });
+        }
+        updatePayload.expiresAt = date;
       }
     }
 
@@ -215,6 +231,72 @@ class FormService {
       ...row,
       submissionCount: row.submissionCount,
     }));
+  }
+
+  async cloneForm(formId: string, userId: string): Promise<SelectForm> {
+    const original = await assertOwnership(formId, userId);
+    const slug = nanoid(10);
+
+    const [cloned] = await db
+      .insert(formsTable)
+      .values({
+        userId,
+        slug,
+        title: `Copy of ${original.title}`,
+        description: original.description,
+        published: false,
+        visibility: original.visibility,
+        layoutMode: original.layoutMode,
+        theme: original.theme,
+        fields: original.fields,
+        submissionMode: original.submissionMode,
+        webhookUrl: original.webhookUrl,
+      })
+      .returning();
+
+    if (!cloned) {
+      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to clone form." });
+    }
+
+    return cloned;
+  }
+
+  async getPublicForms(opts: { limit?: number; cursor?: string } = {}): Promise<{
+    items: Array<SelectForm & { submissionCount: number }>;
+    nextCursor: string | null;
+  }> {
+    const MAX_PAGE_SIZE = 50;
+    const DEFAULT_PAGE_SIZE = 12;
+    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, opts.limit ?? DEFAULT_PAGE_SIZE));
+
+    const conditions = [
+      eq(formsTable.published, true),
+      eq(formsTable.visibility, "PUBLIC"),
+    ];
+
+    if (opts.cursor) {
+      const cursorDate = new Date(opts.cursor);
+      if (!Number.isNaN(cursorDate.getTime())) {
+        conditions.push(lt(formsTable.createdAt, cursorDate));
+      }
+    }
+
+    const rows = await db
+      .select()
+      .from(formsTable)
+      .where(and(...conditions))
+      .orderBy(desc(formsTable.createdAt))
+      .limit(limit + 1);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const last = items[items.length - 1];
+    const nextCursor = hasMore && last?.createdAt ? last.createdAt.toISOString() : null;
+
+    return {
+      items: items.map((r) => ({ ...r, submissionCount: r.submissionCount })),
+      nextCursor,
+    };
   }
 
   // ─── Submissions ────────────────────────────────────────────────────────────
@@ -412,14 +494,40 @@ class FormService {
           }
         }
 
-        // File validation check
+        // File validation check.
+        // Strict whitelist: the URL must be served by our own /uploads endpoint
+        // and use the UUID filename pattern produced by the multer pipeline.
+        // Anything else (external host, traversal, missing extension hygiene)
+        // is rejected to keep submissions from carrying arbitrary URLs that
+        // would later leak through analytics or exports.
         if (field.type === "FILE") {
           if (typeof answer !== "object" || !("url" in (answer as object))) {
             invalidChoiceInjections.push(`Field '${field.label}' must be a valid file upload reference.`);
           } else {
             const file = answer as { url?: unknown; type?: unknown; size?: unknown };
-            if (typeof file.url !== "string" || !/^https?:\/\//.test(file.url)) {
+            const baseUrl = (process.env.BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
+            const uploadsPrefix = `${baseUrl}/uploads/`;
+            // UUID v4-ish + optional alphanumeric extension up to 16 chars.
+            const fileNameRe = /^[0-9a-f-]{36}(?:\.[a-zA-Z0-9]{1,16})?$/;
+
+            if (typeof file.url !== "string") {
               invalidChoiceInjections.push(`Field '${field.label}' has an invalid upload URL.`);
+            } else {
+              let parsed: URL | null = null;
+              try { parsed = new URL(file.url); } catch { parsed = null; }
+              const pathname = parsed?.pathname ?? "";
+              const filename = pathname.replace(/^\/uploads\//, "");
+              const ok =
+                parsed !== null &&
+                file.url.startsWith(uploadsPrefix) &&
+                pathname.startsWith("/uploads/") &&
+                !pathname.includes("..") &&
+                fileNameRe.test(filename);
+              if (!ok) {
+                invalidChoiceInjections.push(
+                  `Field '${field.label}' must reference an uploaded file from this server.`,
+                );
+              }
             }
             if (field.maxSizeMB && typeof file.size === "number") {
               const maxBytes = field.maxSizeMB * 1024 * 1024;

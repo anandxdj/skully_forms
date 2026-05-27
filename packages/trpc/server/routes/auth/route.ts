@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z, zodUndefinedModel } from "../../schema";
 import { userService } from "../../services";
 import { AuthError } from "@repo/services/user";
-import { createSession, revokeSession, SESSION_COOKIE_NAME } from "@repo/services/auth";
+import { createSession, resolveSession, revokeAllSessions, SESSION_COOKIE_NAME } from "@repo/services/auth";
 import { getAuthenticationMethodOutputSchema } from "@repo/services/user/model";
 import { signUpInputSchema, signInInputSchema, authResponseSchema } from "../../schemas/auth-schemas";
 import { publicProcedure, protectedProcedure, router } from "../../trpc";
@@ -120,9 +120,17 @@ export const authRouter = router({
     .input(z.undefined())
     .output(z.object({ success: z.literal(true) }))
     .mutation(async ({ ctx }) => {
+      // Revoke EVERY session for this user, not just the current device. A
+      // stolen cookie on any device dies on signout from any device. The
+      // tradeoff is that signing out on one device also signs out on others
+      // — acceptable as the safer default; a separate signOutThisDevice
+      // mutation can be added later if the UX warrants it.
       const cookies = (ctx.req as unknown as { cookies?: Record<string, string> }).cookies;
       const rawToken = cookies?.[SESSION_COOKIE_NAME];
-      if (rawToken) await revokeSession(rawToken);
+      if (rawToken) {
+        const session = await resolveSession(rawToken);
+        if (session) await revokeAllSessions(session.userId);
+      }
       clearSessionCookie(ctx.res);
       return { success: true as const };
     }),

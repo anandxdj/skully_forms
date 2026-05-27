@@ -1,23 +1,16 @@
-"use client";
-
-import React, { useState } from "react";
+import React from "react";
 import {
-  Plus,
   Palette,
   Monitor,
   Smartphone,
   Play,
   Settings,
 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
-import { FormFieldType } from "@repo/trpc/server/schemas/form-field-schemas";
-import FieldTypePicker from "./field-type-picker";
 import { cn } from "~/lib/utils";
 
 export type DeviceMode = "desktop" | "mobile";
 
 interface TopBarSecondaryProps {
-  onAddField: (type: FormFieldType) => void;
   onDesignClick: () => void;
   onSettingsClick: () => void;
   onPreviewOpen: () => void;
@@ -26,38 +19,16 @@ interface TopBarSecondaryProps {
 }
 
 export default function TopBarSecondary({
-  onAddField,
   onDesignClick,
   onSettingsClick,
   onPreviewOpen,
   deviceMode,
   onDeviceModeChange,
 }: TopBarSecondaryProps) {
-  const [addOpen, setAddOpen] = useState(false);
-
-  const handleAdd = (type: FormFieldType) => {
-    onAddField(type);
-    setAddOpen(false);
-  };
-
   return (
     <div className="shrink-0 h-12 px-4 border-b border-border/30 bg-card/40 backdrop-blur-sm flex items-center justify-between gap-3 z-20">
-      {/* Left: Add content */}
+      {/* Left: Spacer */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <Popover open={addOpen} onOpenChange={setAddOpen}>
-          <PopoverTrigger asChild>
-            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-foreground text-background hover:opacity-90 transition-all cursor-pointer shadow-sm">
-              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-              <span className="hidden sm:inline">Add content</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent side="bottom" align="start" className="w-[300px] p-3">
-            <p className="text-3xs font-black uppercase text-muted-foreground tracking-widest mb-3">
-              Choose field type
-            </p>
-            <FieldTypePicker onSelect={handleAdd} columns={2} />
-          </PopoverContent>
-        </Popover>
       </div>
 
       {/* Center cluster: Design / Device toggle / Play */}

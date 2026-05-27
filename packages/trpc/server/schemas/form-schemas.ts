@@ -4,12 +4,14 @@ import { formFieldsArraySchema } from "./form-field-schemas";
 // ─── Layout, Theme & Auth enums ────────────────────────────────────────────────
 
 export const layoutModeSchema = z.enum(["SCROLL", "SLIDE"]);
-export const themeSchema = z.enum(["slate", "cyberpunk", "sunset", "forest", "skullyLight", "skullyDark"]);
+export const themeSchema = z.enum(["slate", "cyberpunk", "sunset", "forest", "skullyLight", "skullyDark", "skullyNeon", "skullyGold", "skullyGreen", "skullyParty"]);
 export const submissionModeSchema = z.enum(["ANONYMOUS", "AUTHENTICATED", "BOTH"]);
+export const visibilitySchema = z.enum(["PUBLIC", "UNLISTED"]);
 
 export type LayoutMode = z.infer<typeof layoutModeSchema>;
 export type Theme = z.infer<typeof themeSchema>;
 export type SubmissionMode = z.infer<typeof submissionModeSchema>;
+export type Visibility = z.infer<typeof visibilitySchema>;
 
 // ─── Create form ──────────────────────────────────────────────────────────────
 
@@ -30,8 +32,14 @@ export const updateFormInputSchema = z.object({
   layoutMode: layoutModeSchema.optional(),
   theme: themeSchema.optional(),
   fields: formFieldsArraySchema.optional(),
+  visibility: visibilitySchema.optional(),
   submissionMode: submissionModeSchema.optional(),
   webhookUrl: z.string().url().max(2048).or(z.literal("")).optional(),
+  // Scheduled close date. `null` clears it; absent leaves it unchanged.
+  // Accepted as ISO string from the client; coerced to Date for Drizzle.
+  expiresAt: z
+    .union([z.string().datetime(), z.date(), z.null()])
+    .optional(),
 });
 
 export type UpdateFormInput = z.infer<typeof updateFormInputSchema>;
@@ -60,11 +68,14 @@ export const formOutputSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
   published: z.boolean().nullable(),
+  visibility: z.string(),
   layoutMode: z.string(),
   theme: z.string(),
   fields: formFieldsArraySchema,
   submissionMode: z.string(),
   webhookUrl: z.string().nullable(),
+  expiresAt: z.date().nullable(),
+  submissionCount: z.number().optional(),
   createdAt: z.date().nullable(),
   updatedAt: z.date().nullable(),
 });

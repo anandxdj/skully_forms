@@ -33,6 +33,7 @@ import { trpc } from "~/trpc/client";
 import { toast } from "sonner";
 import { cn } from "~/lib/utils";
 import { ASSETS } from "~/lib/assets";
+import { useRequireAuth } from "~/hooks/use-require-auth";
 
 // Random color arrays for Typeform-style form badge icons
 const FORM_BADGE_COLORS = [
@@ -46,6 +47,7 @@ const FORM_BADGE_COLORS = [
 ];
 
 export default function DashboardPageView() {
+  const { user, logout } = useRequireAuth();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
@@ -65,20 +67,6 @@ export default function DashboardPageView() {
   React.useEffect(() => {
     setMounted(true);
   }, []);
-
-  // tRPC Integrations
-  const { data: user, isLoading: userLoading, isError } = trpc.auth.me.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-    retry: 0,
-  });
-
-  React.useEffect(() => {
-    if (isError) {
-      localStorage.removeItem("x-user-id");
-      toast.error("Session expired or unauthorized. Please sign in.");
-      router.push("/login");
-    }
-  }, [isError, router]);
 
   const { data: forms, isLoading, refetch } = trpc.forms.getUserForms.useQuery(undefined, {
     refetchOnWindowFocus: false,
@@ -248,11 +236,7 @@ export default function DashboardPageView() {
             </div>
           </div>
           <button
-            onClick={() => {
-              localStorage.removeItem("x-user-id");
-              toast.info("Logged out successfully");
-              router.push("/login");
-            }}
+            onClick={logout}
             className="w-full mt-2 flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-border/60 hover:bg-destructive/10 hover:border-destructive/30 text-3xs font-extrabold hover:text-destructive transition-all cursor-pointer"
           >
             <LogOut className="w-3 h-3" />
@@ -332,7 +316,7 @@ export default function DashboardPageView() {
         </header>
 
         {/* Stats Bar — computed from real forms data */}
-        {!isLoading && !userLoading && mounted && forms && (
+        {!isLoading && !isLoading && mounted && forms && (
           <div className="grid grid-cols-4 divide-x divide-border/50 border-b border-border/50 shrink-0">
             {[
               { value: forms.length, label: "Total Forms", sub: "in workspace", accent: false },
@@ -378,7 +362,7 @@ export default function DashboardPageView() {
           </div>
 
           {/* Dynamic Loading State */}
-          {isLoading || userLoading || !mounted ? (
+          {isLoading || isLoading || !mounted ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((n) => (
                 <div key={n} className="p-6 space-y-4 rounded-xl border border-border/80 bg-card/45 animate-pulse">

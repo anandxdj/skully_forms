@@ -17,6 +17,8 @@ export const sessionsTable = pgTable(
   (table) => [
     index("sessions_token_idx").on(table.token),
     index("sessions_user_idx").on(table.userId),
+    // Speeds up the nightly purge sweep over expired / long-revoked sessions.
+    index("sessions_cleanup_idx").on(table.expiresAt, table.revokedAt),
   ]
 );
 

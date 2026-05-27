@@ -4,7 +4,9 @@ import { z } from "zod";
 
 const baseFieldSchema = z.object({
   id: z.string().min(1),
-  label: z.string().min(1).max(500),
+  // Empty allowed during draft editing so the inline editor can show only the
+  // placeholder hint. Non-empty is enforced on the publish path, not here.
+  label: z.string().max(500),
   placeholder: z.string().max(500).optional(),
   required: z.boolean().default(false),
   // Fractional index order (e.g. 1.2, 1.4) for drag-and-drop insertion sorting

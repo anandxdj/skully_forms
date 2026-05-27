@@ -7,14 +7,16 @@ const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 /**
  * Set the session cookie on the response.
  * - `httpOnly`: not readable from JS — defeats XSS-based token theft.
- * - `sameSite=lax`: blocks cross-site POSTs while still allowing top-level navs.
+ * - `sameSite=strict`: blocks every cross-site send, including top-level navs.
+ *   Combined with the originGuard CSRF middleware, this closes the cross-site
+ *   mutation surface.
  * - `secure`: only on production; localhost dev needs http for the existing flow.
  */
 export function setSessionCookie(res: Response, rawToken: string, expiresAt: Date): void {
   res.cookie(SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
     secure: IS_PROD,
-    sameSite: "lax",
+    sameSite: "strict",
     expires: expiresAt,
     maxAge: SESSION_TTL_MS,
     path: "/",
@@ -26,7 +28,7 @@ export function clearSessionCookie(res: Response): void {
   res.clearCookie(SESSION_COOKIE_NAME, {
     httpOnly: true,
     secure: IS_PROD,
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
     domain: COOKIE_DOMAIN,
   });

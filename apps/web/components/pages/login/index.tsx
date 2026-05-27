@@ -21,13 +21,21 @@ import { ASSETS } from "~/lib/assets";
 import { toast } from "sonner";
 // ASSETS.skeletons used for illustration panel
 import { trpc } from "~/trpc/client";
+import { useAuth } from "~/providers/auth";
 
 type AuthView = "login" | "signup" | "forgot" | "check-email";
 
 export default function LoginPageView() {
   const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [authLoading, user, router]);
 
   // Auth local states
   const [currentView, setCurrentView] = useState<AuthView>("login");
@@ -41,8 +49,7 @@ export default function LoginPageView() {
 
   // tRPC Mutations
   const loginMutation = trpc.auth.signIn.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("x-user-id", data.id);
+    onSuccess: () => {
       toast.success("Welcome back to Skully Forms!");
       router.push("/dashboard");
     },
@@ -52,8 +59,7 @@ export default function LoginPageView() {
   });
 
   const signUpMutation = trpc.auth.signUp.useMutation({
-    onSuccess: (data) => {
-      localStorage.setItem("x-user-id", data.id);
+    onSuccess: () => {
       toast.success("Spooky account created! Directing to dashboard...");
       router.push("/dashboard");
     },

@@ -1,0 +1,1 @@
+ALTER TABLE "forms" ADD COLUMN "visibility" varchar(20) DEFAULT 'PUBLIC' NOT NULL;

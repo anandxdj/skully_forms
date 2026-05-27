@@ -129,3 +129,79 @@ export async function assertSafeUrl(
   }
   return { ok: true };
 }
+
+export interface ResolvedSafeUrl {
+  ok: true;
+  /** The host's currently-resolved IP. Pin this when making the actual request
+   *  to defeat DNS rebinding between this check and the socket connect. */
+  pinnedIp: string;
+  /** Original parsed URL for the caller to extract pathname/port/protocol. */
+  url: URL;
+}
+
+export type ResolveSafeUrlResult = ResolvedSafeUrl | { ok: false; reason: string };
+
+/**
+ * Fire-time variant: re-validates AND returns a pinned IP. Webhook dispatchers
+ * should call this immediately before making the outbound request, then issue
+ * the fetch against the pinned IP (using a custom http agent's `lookup` hook)
+ * to prevent the rebinding window between this resolve and the actual connect.
+ *
+ * If the host is already a literal IP, the pinned value equals the literal.
+ */
+export async function assertSafeUrlAtFireTime(
+  rawUrl: string,
+  options: UrlGuardOptions = {},
+): Promise<ResolveSafeUrlResult> {
+  const requireHttps = options.requireHttps ?? IS_PROD;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return { ok: false, reason: "URL is malformed." };
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return { ok: false, reason: "Only http(s) URLs are allowed." };
+  }
+  if (requireHttps && parsed.protocol !== "https:") {
+    return { ok: false, reason: "https is required for webhook URLs." };
+  }
+  if (parsed.username || parsed.password) {
+    return { ok: false, reason: "URL must not contain credentials." };
+  }
+  if (parsed.port && (parsed.port === "22" || parsed.port === "25")) {
+    return { ok: false, reason: "Disallowed port." };
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.has(host) || BLOCKED_LITERALS.has(host)) {
+    return { ok: false, reason: "Host is not reachable from this service." };
+  }
+
+  const literalIp = host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+  if (net.isIP(literalIp)) {
+    if (BLOCKED_LITERALS.has(literalIp) || isPrivateIp(literalIp)) {
+      return { ok: false, reason: "Internal addresses are not allowed." };
+    }
+    return { ok: true, pinnedIp: literalIp, url: parsed };
+  }
+
+  let addresses: { address: string }[];
+  try {
+    addresses = await dns.lookup(host, { all: true });
+  } catch {
+    return { ok: false, reason: "Could not resolve host." };
+  }
+  for (const { address } of addresses) {
+    if (BLOCKED_LITERALS.has(address) || isPrivateIp(address)) {
+      return { ok: false, reason: "Host resolves to an internal address." };
+    }
+  }
+  // Pick the first answer as the pin. The dispatcher should connect to this
+  // exact IP via a custom http(s).Agent lookup; the Host header preserves SNI.
+  const first = addresses[0]?.address;
+  if (!first) return { ok: false, reason: "No addresses returned for host." };
+  return { ok: true, pinnedIp: first, url: parsed };
+}

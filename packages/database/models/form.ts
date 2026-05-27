@@ -53,10 +53,13 @@ export const formsTable = pgTable(
 
     published: boolean("published").default(false),
 
-    layoutMode: varchar("layout_mode", { length: 50 }).$type<"SCROLL" | "SLIDE">().notNull().default("SCROLL"),
+    layoutMode: varchar("layout_mode", { length: 50 }).$type<"SCROLL" | "SLIDE">().notNull().default("SLIDE"),
     theme: varchar("theme", { length: 50 }).notNull().default("skullyLight"),
 
     fields: jsonb("fields").$type<DbFormField[]>().notNull().default([]),
+
+    // Public visibility: PUBLIC (appears in explore/galleries) | UNLISTED (link-only)
+    visibility: varchar("visibility", { length: 20 }).$type<"PUBLIC" | "UNLISTED">().notNull().default("PUBLIC"),
 
     // Enforce submission access controls: "ANONYMOUS", "AUTHENTICATED", "BOTH"
     submissionMode: varchar("submission_mode", { length: 50 }).$type<"ANONYMOUS" | "AUTHENTICATED" | "BOTH">().notNull().default("ANONYMOUS"),

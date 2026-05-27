@@ -6,13 +6,15 @@ import { AlertCircle, Loader2, ArrowLeft } from "lucide-react";
 import { trpc } from "~/trpc/client";
 import { toast } from "sonner";
 import { FormField, FormFieldType } from "@repo/trpc/server/schemas/form-field-schemas";
-import { LayoutMode, Theme, SubmissionMode } from "@repo/trpc/server/schemas/form-schemas";
+import { LayoutMode, Theme, SubmissionMode, Visibility } from "@repo/trpc/server/schemas/form-schemas";
 
+import { useRequireAuth } from "~/hooks/use-require-auth";
 import TopBarPrimary, { BuilderTab } from "./components/top-bar-primary";
 import TopBarSecondary, { DeviceMode } from "./components/top-bar-secondary";
 import DesignSheet from "./components/design-sheet";
 import SettingsSheet from "./components/settings-sheet";
 import PreviewModal from "./components/preview-modal";
+import PublishDialog from "./components/publish-dialog";
 import LeftPanel from "./panels/left-panel";
 import CanvasPanel from "./panels/canvas-panel";
 import RightPanel from "./panels/right-panel";
@@ -22,6 +24,7 @@ interface BuilderPageViewProps {
 }
 
 export default function BuilderPageView({ formId }: BuilderPageViewProps) {
+  useRequireAuth();
   const { data: initialForm, isLoading, error } = trpc.forms.getForm.useQuery(
     { formId },
     { refetchOnWindowFocus: false, retry: 1 }
@@ -44,7 +47,9 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
   const [theme, setTheme] = useState<Theme>("skullyLight");
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("SCROLL");
   const [submissionMode, setSubmissionMode] = useState<SubmissionMode>("ANONYMOUS");
+  const [visibility, setVisibility] = useState<Visibility>("PUBLIC");
   const [webhookUrl, setWebhookUrl] = useState<string | null>("");
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [fields, setFields] = useState<FormField[]>([]);
   const [published, setPublished] = useState(false);
 
@@ -54,6 +59,7 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isDesignOpen, setIsDesignOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
@@ -68,7 +74,9 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
       setTheme(initialForm.theme as Theme);
       setLayoutMode(initialForm.layoutMode as LayoutMode);
       setSubmissionMode(initialForm.submissionMode as SubmissionMode);
+      setVisibility((initialForm.visibility as Visibility) ?? "PUBLIC");
       setWebhookUrl(initialForm.webhookUrl);
+      setExpiresAt(initialForm.expiresAt ? new Date(initialForm.expiresAt) : null);
       setFields(initialForm.fields as FormField[]);
       setPublished(!!initialForm.published);
       isFirstRender.current = true;
@@ -92,15 +100,17 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
         theme,
         layoutMode,
         submissionMode,
+        visibility,
         webhookUrl: webhookUrl || "",
         fields,
         published,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
       });
       isDirty.current = false;
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [title, description, theme, layoutMode, submissionMode, webhookUrl, fields, published, formId]);
+  }, [title, description, theme, layoutMode, submissionMode, visibility, webhookUrl, expiresAt, fields, published, formId]);
 
   const markDirty = () => {
     isDirty.current = true;
@@ -124,8 +134,11 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
     const id = `field_${Math.random().toString(36).substring(2, 10)}`;
     const baseDefaults = {
       id,
-      label: `New ${type.toLowerCase()} question`,
-      placeholder: "Add helper text...",
+      // Empty by default so the inline editor renders only the placeholder
+      // hint ("Untitled question" / "Add a description"). Author types
+      // directly without first having to delete seeded copy.
+      label: "",
+      placeholder: "",
       required: false,
       order: getNewFieldOrder(index),
     };
@@ -217,22 +230,75 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
     theme?: Theme;
     layoutMode?: LayoutMode;
     submissionMode?: SubmissionMode;
+    visibility?: Visibility;
     webhookUrl?: string;
+    expiresAt?: Date | null;
   }) => {
     if (settings.title !== undefined) setTitle(settings.title);
     if (settings.description !== undefined) setDescription(settings.description);
     if (settings.theme !== undefined) setTheme(settings.theme);
     if (settings.layoutMode !== undefined) setLayoutMode(settings.layoutMode);
     if (settings.submissionMode !== undefined) setSubmissionMode(settings.submissionMode);
+    if (settings.visibility !== undefined) setVisibility(settings.visibility);
     if (settings.webhookUrl !== undefined) setWebhookUrl(settings.webhookUrl);
+    if (settings.expiresAt !== undefined) setExpiresAt(settings.expiresAt);
     markDirty();
   };
 
-  const handlePublishToggle = () => {
-    const next = !published;
-    setPublished(next);
+  /**
+   * Validates that the form can be published. Returns the list of issues
+   * (empty array means OK). Reused by both the top-bar quick path and the
+   * publish dialog so the same gates apply everywhere.
+   */
+  const collectPublishIssues = (): string[] => {
+    const issues: string[] = [];
+    if (fields.length === 0) issues.push("Add at least one question.");
+    const missing = fields
+      .map((f, i) => ({ idx: i + 1, label: f.label.trim() }))
+      .filter((f) => f.label.length === 0);
+    if (missing.length > 0) {
+      issues.push(`Add question text to: ${missing.map((m) => `#${m.idx}`).join(", ")}`);
+    }
+    return issues;
+  };
+
+  const openPublishFlow = () => {
+    if (published) {
+      // Unpublish path stays direct — confirms via toast, no dialog.
+      setPublished(false);
+      isDirty.current = true;
+      toast.info("Form moved to draft.");
+      return;
+    }
+    const issues = collectPublishIssues();
+    if (issues.length > 0) {
+      issues.forEach((msg) => toast.error(msg));
+      return;
+    }
+    setIsPublishDialogOpen(true);
+  };
+
+  const handlePublishConfirm = (next: {
+    submissionMode: SubmissionMode;
+    visibility: Visibility;
+    webhookUrl: string;
+    expiresAt: Date | null;
+  }) => {
+    setSubmissionMode(next.submissionMode);
+    setVisibility(next.visibility);
+    setWebhookUrl(next.webhookUrl);
+    setExpiresAt(next.expiresAt);
+    setPublished(true);
     isDirty.current = true;
-    toast.info(next ? "Form is now live!" : "Form moved to draft.");
+    setIsPublishDialogOpen(false);
+    toast.success("Form is live!");
+    if (typeof window !== "undefined") {
+      const url = `${window.location.origin}/form/${formId}`;
+      navigator.clipboard?.writeText(url).then(
+        () => toast.info("Public link copied to clipboard."),
+        () => {}
+      );
+    }
   };
 
   const handleShareClick = () => {
@@ -308,14 +374,13 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
         onTabChange={setActiveTab}
         savingStatus={savingStatus}
         published={published}
-        onPublishClick={handlePublishToggle}
+        onPublishClick={openPublishFlow}
         onShareClick={handleShareClick}
       />
 
       {/* Secondary toolbar — only on Content tab */}
       {activeTab === "content" && (
         <TopBarSecondary
-          onAddField={handleAddField}
           onDesignClick={() => setIsDesignOpen(true)}
           onSettingsClick={() => setIsSettingsOpen(true)}
           onPreviewOpen={() => setIsPreviewOpen(true)}
@@ -369,6 +434,7 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
         description={description}
         theme={theme}
         layoutMode={layoutMode}
+        visibility={visibility}
         onUpdate={handleUpdateSettings}
       />
       <SettingsSheet
@@ -378,7 +444,7 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
         webhookUrl={webhookUrl}
         published={published}
         onUpdate={handleUpdateSettings}
-        onPublishToggle={handlePublishToggle}
+        onPublishToggle={openPublishFlow}
       />
 
       {/* Preview modal */}
@@ -392,6 +458,19 @@ export default function BuilderPageView({ formId }: BuilderPageViewProps) {
           theme,
           fields,
         }}
+      />
+
+      {/* Publish dialog */}
+      <PublishDialog
+        open={isPublishDialogOpen}
+        onOpenChange={setIsPublishDialogOpen}
+        formId={formId}
+        title={title}
+        submissionMode={submissionMode}
+        visibility={visibility}
+        webhookUrl={webhookUrl || ""}
+        expiresAt={expiresAt}
+        onConfirm={handlePublishConfirm}
       />
     </div>
   );

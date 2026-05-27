@@ -24,6 +24,7 @@ import {
   analyticsRebuildLimiter,
 } from "./middleware/rate-limits";
 import { requireSession, type AuthedRequest } from "./middleware/session";
+import { originGuard } from "./middleware/csrf";
 
 export const app = express();
 
@@ -112,15 +113,27 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Serve uploaded files with `Content-Disposition: attachment` and a fixed
-// content type so the browser never renders attacker-controlled HTML/SVG inline.
+// Serve uploaded files. Images and short videos render inline; everything
+// else is forced to download via `Content-Disposition: attachment` so the
+// browser never renders attacker-controlled HTML/SVG/text inline. The MIME
+// allow-list already restricts upload types but the attachment header is
+// belt-and-suspenders against a future list slip.
+const INLINE_SAFE_EXTS = new Set([
+  "jpg", "jpeg", "png", "gif", "webp",
+  "mp4", "webm", "mov",
+]);
+
 app.use(
   "/uploads",
   express.static(uploadsDir, {
     fallthrough: true,
-    setHeaders: (res) => {
+    setHeaders: (res, filePath) => {
       res.setHeader("X-Content-Type-Options", "nosniff");
       res.setHeader("Cache-Control", "private, max-age=3600");
+      const ext = path.extname(filePath).slice(1).toLowerCase();
+      if (!INLINE_SAFE_EXTS.has(ext)) {
+        res.setHeader("Content-Disposition", "attachment");
+      }
     },
   }),
 );
@@ -188,6 +201,14 @@ app.use(signUpPaths, signUpLimiter);
 app.use(submitPaths, publicSubmitLimiter);
 app.use(rebuildPaths, analyticsRebuildLimiter);
 app.use(/\/api\/submissions\/[^/]+\/analytics\/rebuild$/, analyticsRebuildLimiter);
+
+// CSRF guard. Refuses cross-site mutations on both API surfaces. Combined
+// with SameSite=Strict session cookies this closes the cross-site mutation
+// gap. Mounted AFTER rate-limit caps so a flood of malicious cross-origin
+// hits still trips the limiter, but BEFORE the catch-all global limit so
+// CSRF returns 403 before counting against the legit user's quota.
+app.use("/trpc", originGuard);
+app.use("/api", originGuard);
 
 // Catch-all rate limit on the two API surfaces. Protects everything that
 // doesn't have a tighter route-specific cap above.

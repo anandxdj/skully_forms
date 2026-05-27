@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Theme } from "@repo/trpc/server/schemas/form-schemas";
+import { THEME_ILLUSTRATIONS } from "~/components/pages/builder/components/theme-variables";
 
 interface ThemeWrapperProps {
   theme: Theme;
@@ -123,10 +124,87 @@ const THEME_VARIABLES: Record<Theme, Record<string, string>> = {
     "--input": "oklch(0.55 0.22 25 / 15%)",
     "--ring": "oklch(0.55 0.22 25)",
   },
+  skullyNeon: {
+    "--background": "oklch(0.06 0.01 260)",
+    "--foreground": "oklch(0.95 0.05 140)",
+    "--card": "oklch(0.09 0.02 260)",
+    "--card-foreground": "oklch(0.95 0.05 140)",
+    "--popover": "oklch(0.09 0.02 260)",
+    "--popover-foreground": "oklch(0.95 0.05 140)",
+    "--primary": "oklch(0.85 0.22 140)",
+    "--primary-foreground": "oklch(0.06 0.01 260)",
+    "--secondary": "oklch(0.12 0.02 260)",
+    "--secondary-foreground": "oklch(0.95 0.05 140)",
+    "--muted": "oklch(0.12 0.02 260)",
+    "--muted-foreground": "oklch(0.65 0.05 140 / 70%)",
+    "--accent": "oklch(0.7 0.2 200)",
+    "--accent-foreground": "oklch(0.06 0.01 260)",
+    "--border": "oklch(0.85 0.22 140 / 20%)",
+    "--input": "oklch(0.85 0.22 140 / 10%)",
+    "--ring": "oklch(0.85 0.22 140)",
+  },
+  skullyGold: {
+    "--background": "oklch(0.1 0.03 60)",
+    "--foreground": "oklch(0.97 0.02 80)",
+    "--card": "oklch(0.13 0.04 60)",
+    "--card-foreground": "oklch(0.97 0.02 80)",
+    "--popover": "oklch(0.13 0.04 60)",
+    "--popover-foreground": "oklch(0.97 0.02 80)",
+    "--primary": "oklch(0.78 0.16 85)",
+    "--primary-foreground": "oklch(0.1 0.03 60)",
+    "--secondary": "oklch(0.16 0.04 60)",
+    "--secondary-foreground": "oklch(0.97 0.02 80)",
+    "--muted": "oklch(0.16 0.04 60)",
+    "--muted-foreground": "oklch(0.65 0.04 80 / 60%)",
+    "--accent": "oklch(0.62 0.12 40)",
+    "--accent-foreground": "oklch(1 0 0)",
+    "--border": "oklch(0.78 0.16 85 / 25%)",
+    "--input": "oklch(0.78 0.16 85 / 12%)",
+    "--ring": "oklch(0.78 0.16 85)",
+  },
+  skullyGreen: {
+    "--background": "oklch(0.1 0.03 150)",
+    "--foreground": "oklch(0.97 0.02 150)",
+    "--card": "oklch(0.13 0.03 150)",
+    "--card-foreground": "oklch(0.97 0.02 150)",
+    "--popover": "oklch(0.13 0.03 150)",
+    "--popover-foreground": "oklch(0.97 0.02 150)",
+    "--primary": "oklch(0.72 0.18 148)",
+    "--primary-foreground": "oklch(0.1 0.03 150)",
+    "--secondary": "oklch(0.16 0.03 150)",
+    "--secondary-foreground": "oklch(0.97 0.02 150)",
+    "--muted": "oklch(0.16 0.03 150)",
+    "--muted-foreground": "oklch(0.65 0.02 150 / 60%)",
+    "--accent": "oklch(0.6 0.15 110)",
+    "--accent-foreground": "oklch(0.1 0.03 150)",
+    "--border": "oklch(0.72 0.18 148 / 25%)",
+    "--input": "oklch(0.72 0.18 148 / 12%)",
+    "--ring": "oklch(0.72 0.18 148)",
+  },
+  skullyParty: {
+    "--background": "oklch(0.97 0.008 330)",
+    "--foreground": "oklch(0.2 0.01 330)",
+    "--card": "oklch(0.99 0.004 330)",
+    "--card-foreground": "oklch(0.2 0.01 330)",
+    "--popover": "oklch(0.99 0.004 330)",
+    "--popover-foreground": "oklch(0.2 0.01 330)",
+    "--primary": "oklch(0.62 0.25 333)",
+    "--primary-foreground": "oklch(1 0 0)",
+    "--secondary": "oklch(0.94 0.012 330)",
+    "--secondary-foreground": "oklch(0.2 0.01 330)",
+    "--muted": "oklch(0.94 0.012 330)",
+    "--muted-foreground": "oklch(0.55 0.01 330)",
+    "--accent": "oklch(0.85 0.15 300)",
+    "--accent-foreground": "oklch(0.2 0.01 330)",
+    "--border": "oklch(0.9 0.015 330)",
+    "--input": "oklch(0.9 0.015 330)",
+    "--ring": "oklch(0.62 0.25 333)",
+  },
 };
 
 export default function ThemeWrapper({ theme, children }: ThemeWrapperProps) {
   const inlineStyles = THEME_VARIABLES[theme] || THEME_VARIABLES.slate;
+  const illus = THEME_ILLUSTRATIONS[theme];
 
   return (
     <div
@@ -138,6 +216,22 @@ export default function ThemeWrapper({ theme, children }: ThemeWrapperProps) {
         <div className="absolute top-[10%] left-[-15%] w-[580px] h-[580px] rounded-full bg-primary/5 blur-[120px]" />
         <div className="absolute bottom-[10%] right-[-15%] w-[580px] h-[580px] rounded-full bg-primary/5 blur-[120px]" />
       </div>
+
+      {/* Theme background illustration */}
+      {illus?.background && (
+        <div className="absolute inset-0 z-[1] pointer-events-none select-none overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={illus.background} alt="" className="w-full h-full object-cover opacity-[0.15]" />
+        </div>
+      )}
+
+      {/* Theme skeleton character — fixed to bottom-right of viewport */}
+      {illus?.skeleton && (
+        <div className="fixed bottom-0 right-0 w-56 h-72 z-[2] pointer-events-none select-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={illus.skeleton} alt="" className="w-full h-full object-contain object-bottom drop-shadow-2xl" />
+        </div>
+      )}
 
       <div className="relative z-10 w-full flex-1 flex flex-col">
         {children}

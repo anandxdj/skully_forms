@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Palette, Layout, CheckCircle2 } from "lucide-react";
+import { Palette, Layout, CheckCircle2, Globe, Link as LinkIcon } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -10,16 +10,21 @@ import {
   SheetDescription,
 } from "~/components/ui/sheet";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { LayoutMode, Theme } from "@repo/trpc/server/schemas/form-schemas";
+import { LayoutMode, Theme, Visibility } from "@repo/trpc/server/schemas/form-schemas";
 import { cn } from "~/lib/utils";
+import { THEME_ILLUSTRATIONS } from "./theme-variables";
 
 const THEME_OPTIONS: { id: Theme; label: string; desc: string; preview: string }[] = [
   { id: "slate",       label: "Midnight Slate",    desc: "Sleek monochrome dark",    preview: "from-zinc-900 to-zinc-700 border-zinc-600" },
   { id: "cyberpunk",   label: "Cyberpunk Neon",    desc: "Glowing neon on black",    preview: "from-black via-[#ff2e8c]/40 to-[#00f5ff]/40 border-pink-500" },
   { id: "sunset",      label: "Sunset Glow",       desc: "Warm burgundy and orange", preview: "from-amber-950 via-[#ff2e8c]/30 to-rose-700 border-orange-500" },
   { id: "forest",      label: "Deep Forest",       desc: "Organic emerald and sage", preview: "from-emerald-950 to-teal-800 border-emerald-500" },
-  { id: "skullyLight", label: "Cute Skully Pink",  desc: "Peach-pink pastel",        preview: "from-[#F5DCD0]/60 via-[#ED9194]/45 to-[#FAF8F5] border-[#ED9194]" },
-  { id: "skullyDark",  label: "Gothic Skully Red", desc: "Obsidian with crimson",    preview: "from-black via-[#E21D48]/35 to-[#131317] border-[#E21D48]" },
+  { id: "skullyLight",  label: "Cute Skully Pink",   desc: "Peach-pink pastel",          preview: "from-[#F5DCD0]/60 via-[#ED9194]/45 to-[#FAF8F5] border-[#ED9194]" },
+  { id: "skullyDark",   label: "Gothic Skully Red",  desc: "Obsidian with crimson",      preview: "from-black via-[#E21D48]/35 to-[#131317] border-[#E21D48]" },
+  { id: "skullyNeon",   label: "Neon Gaming",        desc: "Electric green on dark",     preview: "from-[#0a0a1a] via-[#00ff87]/30 to-[#0a0a1a] border-[#00ff87]" },
+  { id: "skullyGold",   label: "Golden Skull",       desc: "Rich gold on near-black",    preview: "from-[#1a1000] via-[#c9a227]/40 to-[#1a0a00] border-[#c9a227]" },
+  { id: "skullyGreen",  label: "Jungle Bones",       desc: "Deep jungle with leaf green", preview: "from-[#071a0a] via-[#4ade80]/30 to-[#071a0a] border-[#4ade80]" },
+  { id: "skullyParty",  label: "Party Skeleton",     desc: "Hot pink celebration",       preview: "from-[#F5D0E8]/60 via-[#ec4899]/40 to-[#fdf4ff] border-[#ec4899]" },
 ];
 
 interface DesignSheetProps {
@@ -28,7 +33,8 @@ interface DesignSheetProps {
   description: string | null;
   theme: Theme;
   layoutMode: LayoutMode;
-  onUpdate: (s: { description?: string; theme?: Theme; layoutMode?: LayoutMode }) => void;
+  visibility?: Visibility;
+  onUpdate: (s: { description?: string; theme?: Theme; layoutMode?: LayoutMode; visibility?: Visibility }) => void;
 }
 
 export default function DesignSheet({
@@ -37,6 +43,7 @@ export default function DesignSheet({
   description,
   theme,
   layoutMode,
+  visibility = "PUBLIC",
   onUpdate,
 }: DesignSheetProps) {
   return (
@@ -62,6 +69,7 @@ export default function DesignSheet({
               <div className="grid grid-cols-1 gap-2">
                 {THEME_OPTIONS.map((opt) => {
                   const isSelected = theme === opt.id;
+                  const illus = THEME_ILLUSTRATIONS[opt.id];
                   return (
                     <button
                       key={opt.id}
@@ -75,10 +83,19 @@ export default function DesignSheet({
                     >
                       <div
                         className={cn(
-                          "w-10 h-10 rounded-lg bg-gradient-to-tr border shadow-inner shrink-0",
+                          "relative w-10 h-10 rounded-lg bg-gradient-to-tr border shadow-inner shrink-0 overflow-hidden",
                           opt.preview
                         )}
-                      />
+                      >
+                        {illus?.skeleton && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={illus.skeleton}
+                            alt=""
+                            className="absolute bottom-0 right-0 w-8 h-9 object-contain object-bottom"
+                          />
+                        )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <p className={cn("text-xs font-bold", isSelected ? "text-primary" : "text-foreground")}>
                           {opt.label}
@@ -122,6 +139,38 @@ export default function DesignSheet({
                       <p className="text-4xs mt-1 text-muted-foreground/70">
                         {mode === "SCROLL" ? "All on one page" : "One at a time"}
                       </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* Visibility */}
+            <section className="space-y-3">
+              <h3 className="text-3xs font-black uppercase text-muted-foreground tracking-widest flex items-center gap-1.5">
+                <Globe className="w-3 h-3" />
+                Visibility
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { id: "PUBLIC" as const, icon: Globe, label: "Public", desc: "Listed in explore" },
+                  { id: "UNLISTED" as const, icon: LinkIcon, label: "Unlisted", desc: "Link-only" },
+                ]).map((opt) => {
+                  const isSelected = visibility === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => onUpdate({ visibility: opt.id })}
+                      className={cn(
+                        "p-3 rounded-xl border text-left transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-primary/5 border-primary text-primary"
+                          : "bg-card border-border/50 hover:border-border text-muted-foreground"
+                      )}
+                    >
+                      <opt.icon className="w-3 h-3 mb-1" />
+                      <p className="text-xs font-bold">{opt.label}</p>
+                      <p className="text-4xs mt-0.5 text-muted-foreground/70">{opt.desc}</p>
                     </button>
                   );
                 })}

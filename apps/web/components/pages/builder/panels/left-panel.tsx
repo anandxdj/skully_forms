@@ -107,8 +107,10 @@ export default function LeftPanel({
         )}
       </div>
 
-      {/* Sortable question list */}
-      <ScrollArea className="flex-1">
+      {/* Sortable question list — `min-h-0` is the load-bearing class: without
+          it the flex column can't shrink the ScrollArea and the inner viewport
+          never scrolls when the list overflows. */}
+      <ScrollArea className="flex-1 min-h-0">
         <div className="px-2 py-2 space-y-0.5">
           {fields.length === 0 ? (
             <p className="text-xs text-muted-foreground/40 text-center py-8 px-4">

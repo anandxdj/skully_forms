@@ -1,0 +1,1 @@
+CREATE INDEX "sessions_cleanup_idx" ON "sessions" USING btree ("expires_at","revoked_at");

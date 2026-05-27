@@ -4,7 +4,7 @@
     "rootDir": "./src",
     "outDir": "./dist",
 
-    "moduleResolution": "Node",
+    "moduleResolution": "Node16",
     "module": "CommonJS",
 
     // We don't need these for our final build

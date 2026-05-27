@@ -15,6 +15,7 @@ import { trpc } from "~/trpc/client";
 import { toast } from "sonner";
 import { FormField } from "@repo/trpc/server/schemas/form-field-schemas";
 
+import { useRequireAuth } from "~/hooks/use-require-auth";
 import TabAnalytics from "./tab-analytics";
 import TabSubmissions from "./tab-submissions";
 import TabGallery from "./tab-gallery";
@@ -26,6 +27,7 @@ interface ResponsesPageViewProps {
 type TabType = "analytics" | "submissions" | "gallery";
 
 export default function ResponsesPageView({ formId }: ResponsesPageViewProps) {
+  useRequireAuth();
   // 1. Fetch form metadata details (to resolve question labels)
   const { data: form, isLoading, error } = trpc.forms.getForm.useQuery(
     { formId },

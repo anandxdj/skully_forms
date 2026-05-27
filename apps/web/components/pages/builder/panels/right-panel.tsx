@@ -370,7 +370,7 @@ export default function RightPanel({
 
   return (
     <aside className="flex flex-col h-full w-[300px] border-l border-sidebar-border bg-sidebar/40 shrink-0">
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 min-h-0">
         <div className="p-3 space-y-3">
           {/* Question section */}
           <CardSection>

@@ -6,7 +6,7 @@ import { Separator } from "~/components/ui/separator";
 
 export default function EndingsPanel() {
   return (
-    <div className="px-3 pb-3">
+    <div className="px-3 pb-3 shrink-0">
       <Separator className="mb-3" />
       <div className="flex items-center justify-between px-1 mb-2">
         <p className="text-4xs font-black uppercase text-muted-foreground/50 tracking-widest">

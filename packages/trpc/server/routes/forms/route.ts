@@ -141,7 +141,9 @@ export const formsRouter = router({
         theme: input.theme,
         fields: input.fields,
         submissionMode: input.submissionMode,
+        visibility: input.visibility,
         webhookUrl: input.webhookUrl,
+        expiresAt: input.expiresAt,
       });
 
       return {
@@ -175,8 +177,70 @@ export const formsRouter = router({
       return { success: true as const };
     }),
 
+  // ── POST /forms/:formId/clone ────────────────────────────────────────────────
+
+  cloneForm: protectedProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: getPath("/{formId}/clone"),
+        tags: TAGS,
+        summary: "Clone a form (owner only)",
+        description: "Duplicates a form configuration into a new unpublished draft owned by the same user. Generates a new slug.",
+      },
+    })
+    .input(formIdInputSchema)
+    .output(formOutputSchema)
+    .mutation(async ({ ctx, input }) => {
+      const form = await formService.cloneForm(input.formId, ctx.user.id);
+
+      return {
+        ...form,
+        fields: formFieldsArraySchema.parse(form.fields ?? []),
+        submissionMode: form.submissionMode,
+        webhookUrl: form.webhookUrl,
+      };
+    }),
+
+  // ── GET /public/forms ────────────────────────────────────────────────────────
+
+  getPublicForms: publicProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/public/forms",
+        tags: ["Public"],
+        summary: "Browse public published forms",
+        description: "Returns a paginated list of published PUBLIC forms for explore pages and template galleries. UNLISTED forms are excluded.",
+      },
+    })
+    .input(z.object({
+      limit: z.number().int().min(1).max(50).optional(),
+      cursor: z.string().optional(),
+    }))
+    .output(z.object({
+      items: z.array(formListItemOutputSchema),
+      nextCursor: z.string().nullable(),
+    }))
+    .query(async ({ input }) => {
+      const { items, nextCursor } = await formService.getPublicForms({
+        limit: input.limit,
+        cursor: input.cursor,
+      });
+
+      return {
+        items: items.map((form) => ({
+          ...form,
+          fields: formFieldsArraySchema.parse(form.fields ?? []),
+          submissionMode: form.submissionMode,
+          webhookUrl: form.webhookUrl,
+        })),
+        nextCursor,
+      };
+    }),
+
   // ── GET /public/forms/:slug ──────────────────────────────────────────────────
-  
+
   /**
    * Public procedure to retrieve form layouts by public URL slug.
    * Requires no authentication header, but requires published = true.

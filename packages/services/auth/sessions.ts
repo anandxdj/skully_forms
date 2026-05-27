@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { db, eq, and, isNull, gt } from "@repo/database";
+import { db, eq, and, isNull, gt, or, lt, sql } from "@repo/database";
 import { sessionsTable, type SelectSession } from "@repo/database/schema";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -91,6 +91,30 @@ export async function revokeAllSessions(userId: string): Promise<void> {
     .update(sessionsTable)
     .set({ revokedAt: new Date() })
     .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt)));
+}
+
+/**
+ * Delete sessions that are either expired or have been revoked for longer
+ * than `revokedRetentionDays`. Run from a nightly cron. Returns the count
+ * for observability.
+ */
+export async function purgeExpiredSessions(
+  revokedRetentionDays = 7,
+): Promise<number> {
+  const cutoff = new Date(Date.now() - revokedRetentionDays * 24 * 60 * 60 * 1000);
+  const result = await db
+    .delete(sessionsTable)
+    .where(
+      or(
+        lt(sessionsTable.expiresAt, new Date()),
+        and(
+          sql`${sessionsTable.revokedAt} IS NOT NULL`,
+          lt(sessionsTable.revokedAt, cutoff),
+        ),
+      ),
+    )
+    .returning({ id: sessionsTable.id });
+  return result.length;
 }
 
 export { SESSION_TTL_MS };

@@ -64,7 +64,7 @@ export default function SettingsSheet({
                 {published ? (
                   <><Lock className="w-3.5 h-3.5" /> Set to Draft</>
                 ) : (
-                  <><Globe className="w-3.5 h-3.5" /> Publish Now</>
+                  <><Globe className="w-3.5 h-3.5" /> Open publish settings</>
                 )}
               </button>
             </section>

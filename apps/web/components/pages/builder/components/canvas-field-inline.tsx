@@ -59,7 +59,7 @@ function EditableText({
         }
       }}
       className={cn(
-        "outline-none rounded-md px-1 -mx-1 focus:bg-primary/5 focus:ring-2 ring-primary/30 transition-colors empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/30 inline-block min-w-[2ch]",
+        "outline-none rounded-md px-1 -mx-1 focus:bg-primary/5 focus:ring-2 ring-primary/30 transition-colors empty:before:content-[attr(data-placeholder)] empty:before:text-muted-foreground/40 empty:before:font-normal inline-block min-w-[2ch]",
         className
       )}
     >
@@ -84,7 +84,7 @@ function OptionRow({
   canRemove: boolean;
 }) {
   return (
-    <div className="group flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border/50 hover:border-primary/30 transition-colors bg-card/40">
+    <div className="group flex items-center gap-2.5 px-3.5 py-3 rounded-2xl border border-border/50 hover:border-primary/40 hover:bg-card/60 transition-all bg-card/40">
       <span className="font-mono text-4xs font-bold text-muted-foreground/40 w-4 shrink-0">
         {String.fromCharCode(65 + index)}
       </span>
@@ -307,35 +307,35 @@ export default function CanvasFieldInline({
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {/* Question number + progress */}
-      <div className="px-6 pt-5 pb-3 space-y-2">
-        <div className="w-full h-0.5 bg-border/30 rounded-full overflow-hidden">
+      {/* Progress + counter pill */}
+      <div className="px-2 pt-1 pb-5 space-y-2.5">
+        <div className="w-full h-1 bg-border/30 rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary/50 rounded-full transition-all duration-500"
+            className="h-full bg-primary rounded-full transition-[width] duration-700 ease-out"
             style={{ width: `${((index + 1) / total) * 100}%` }}
           />
         </div>
-        <p className="text-4xs font-mono font-bold text-muted-foreground/40 tracking-widest uppercase">
-          {index + 1} → {total}
-        </p>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-3xs font-mono font-bold text-primary tracking-widest uppercase">
+            {index + 1} of {total}
+          </span>
+        </div>
       </div>
 
       {/* Body */}
-      <div className="px-6 py-4 flex flex-col gap-6">
+      <div className="px-2 flex flex-col gap-7">
         {/* Label */}
-        <div className="space-y-1.5">
-          <p className="text-base font-heading font-bold text-foreground leading-snug">
+        <div className="space-y-2.5">
+          <p className="text-2xl md:text-3xl font-heading font-extrabold text-foreground leading-[1.15] tracking-tight">
             <EditableText
               value={field.label}
-              onCommit={(next) =>
-                onUpdateField(field.id, { label: next || "Untitled question" })
-              }
+              onCommit={(next) => onUpdateField(field.id, { label: next })}
               placeholder="Untitled question"
               multiline
             />
-            {field.required && <span className="text-primary ml-1 text-sm">*</span>}
+            {field.required && <span className="text-primary ml-1.5">*</span>}
           </p>
-          <p className="text-xs text-muted-foreground/60 leading-relaxed">
+          <p className="text-sm text-muted-foreground/70 leading-relaxed">
             <EditableText
               value={field.placeholder || ""}
               onCommit={(next) =>
@@ -351,14 +351,14 @@ export default function CanvasFieldInline({
         <FieldBody field={field} onUpdateField={onUpdateField} />
 
         {/* Inline controls */}
-        <div className="flex items-center gap-3 pt-2 border-t border-border/30">
+        <div className="flex items-center gap-3 pt-3 border-t border-border/30">
           <button
             onClick={() => onUpdateField(field.id, { required: !field.required })}
             className={cn(
-              "inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-3xs font-bold transition-all cursor-pointer",
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-3xs font-bold transition-all cursor-pointer",
               field.required
                 ? "bg-primary/10 text-primary border border-primary/30"
-                : "border border-border/50 text-muted-foreground hover:text-foreground"
+                : "border border-border/50 text-muted-foreground hover:text-foreground hover:border-border"
             )}
           >
             <Asterisk className="w-3 h-3" />
@@ -369,7 +369,7 @@ export default function CanvasFieldInline({
 
           <button
             onClick={() => onDeleteField(field.id)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-3xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-3xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 transition-all cursor-pointer"
           >
             <Trash2 className="w-3 h-3" />
             Delete
